@@ -1,1 +1,561 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Golden Theatre</title>
+<style>
+  :root{
+    --gold:      #c9a86a;
+    --gold-lit:  #e0c68f;
+    --ink:       #e9e3d5;
+  }
 
+  *{ margin:0; padding:0; box-sizing:border-box; }
+
+  html, body{ height:100%; }
+
+  body{
+    min-height:100dvh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding: 48px 0;
+    overflow-x:hidden;
+    overflow-y:auto;
+    background:
+      radial-gradient(ellipse at 50% 0%, #15121b 0%, #0a0a0f 55%, #050508 100%);
+    color: var(--ink);
+    font-family: "Noto Serif SC", "Songti SC", STSong, "SimSun", serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------- 背景氛围 ---------- */
+  #dust{
+    position: fixed; inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .glow{
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(70px);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .g1{
+    width:70vmax; height:70vmax; left:-25vmax; top:-30vmax;
+    background: radial-gradient(circle, rgba(46,74,130,.55), transparent 65%);
+    animation: drift1 24s ease-in-out infinite alternate;
+  }
+  .g2{
+    width:60vmax; height:60vmax; right:-22vmax; bottom:-28vmax;
+    background: radial-gradient(circle, rgba(150,110,50,.34), transparent 65%);
+    animation: drift2 30s ease-in-out infinite alternate;
+  }
+  .g3{
+    width:45vmax; height:45vmax; left:45%; top:55%;
+    background: radial-gradient(circle, rgba(88,48,110,.28), transparent 65%);
+    animation: drift1 36s ease-in-out infinite alternate-reverse;
+  }
+  @keyframes drift1{ to{ transform: translate3d(6vmax, 4vmax, 0) scale(1.12); } }
+  @keyframes drift2{ to{ transform: translate3d(-5vmax, -6vmax, 0) scale(1.16); } }
+
+  /* 细微颗粒质感 */
+  body::after{
+    content:"";
+    position: fixed; inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background-image: radial-gradient(rgba(255,255,255,.05) 1px, transparent 1px);
+    background-size: 4px 4px;
+    opacity: .35;
+  }
+
+  /* ---------- 舞台 ---------- */
+  .stage{
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .head{
+    text-align: center;
+    margin-bottom: clamp(30px, 6vh, 56px);
+    padding: 0 20px;
+  }
+
+  .kicker{
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 10px;
+    letter-spacing: .5em;
+    text-indent: .5em;
+    color: rgba(201,168,106,.55);
+    margin-bottom: 18px;
+    opacity: 0;
+    animation: rise .9s .15s cubic-bezier(.2,.9,.3,1) forwards;
+  }
+
+  h1{
+    font-size: clamp(32px, 8vw, 58px);
+    font-weight: 500;
+    letter-spacing: .3em;
+    text-indent: .3em;
+    color: #f1e9d8;
+    text-shadow:
+      0 0 30px rgba(201,168,106,.35),
+      0 0 70px rgba(201,168,106,.15);
+    opacity: 0;
+    animation: rise .9s .26s cubic-bezier(.2,.9,.3,1) forwards;
+  }
+
+  .rule{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 20px;
+    opacity: 0;
+    animation: rise .9s .38s cubic-bezier(.2,.9,.3,1) forwards;
+  }
+  .rule i{
+    display: block;
+    width: min(90px, 18vw);
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(201,168,106,.6), transparent);
+  }
+  .rule span{
+    font-size: 10px;
+    color: rgba(201,168,106,.7);
+  }
+
+  /* ---------- 菜单 ---------- */
+  .menu{
+    display: flex;
+    flex-direction: column;
+    width: min(440px, 84vw);
+    margin: 0 auto;
+  }
+
+  .item{
+    position: relative;
+    isolation: isolate;
+    display: block;
+    width: 100%;
+    padding: 20px 96px 20px 62px;
+    background: none;
+    border: 0;
+    border-top: 1px solid rgba(201,168,106,.16);
+    color: rgba(233,227,213,.72);
+    font-family: inherit;
+    font-size: clamp(17px, 4.4vw, 22px);
+    letter-spacing: .34em;
+    text-align: left;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: color .35s ease, padding-left .35s ease, background-image .35s ease, text-shadow .35s ease;
+    opacity: 0;
+    transform: translateY(16px);
+    animation: rise .8s cubic-bezier(.2,.9,.3,1) forwards;
+  }
+  .item:last-child{ border-bottom: 1px solid rgba(201,168,106,.16); }
+
+  .item:nth-child(1){ animation-delay: .55s; }
+  .item:nth-child(2){ animation-delay: .68s; }
+  .item:nth-child(3){ animation-delay: .81s; }
+
+  /* 左侧高亮光条 */
+  .item::before{
+    content:"";
+    position: absolute;
+    left: 0; top: 50%;
+    width: 2px; height: 0;
+    transform: translateY(-50%);
+    background: linear-gradient(180deg, transparent, var(--gold-lit), transparent);
+    box-shadow: 0 0 10px rgba(217,187,125,.8);
+    transition: height .4s cubic-bezier(.2,.9,.3,1);
+  }
+
+  .item:hover,
+  .item.active{
+    color: #f5eedd;
+    padding-left: 74px;
+    background-image: linear-gradient(90deg, rgba(201,168,106,.14), rgba(201,168,106,.03) 60%, transparent);
+    text-shadow: 0 0 18px rgba(233,211,160,.5);
+  }
+  .item:hover::before,
+  .item.active::before{ height: 76%; }
+
+  .item:focus-visible{
+    outline: 1px dashed rgba(201,168,106,.6);
+    outline-offset: -6px;
+  }
+
+  .idx{
+    position: absolute;
+    left: 24px; top: 50%;
+    transform: translateY(-50%);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+    letter-spacing: .08em;
+    color: rgba(201,168,106,.42);
+    transition: color .35s ease;
+  }
+  .item:hover .idx,
+  .item.active .idx{ color: var(--gold-lit); }
+
+  .en{
+    position: absolute;
+    right: 22px; top: 50%;
+    transform: translateY(-50%);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 9.5px;
+    letter-spacing: .24em;
+    color: rgba(233,227,213,.18);
+    transition: color .35s ease;
+  }
+  .item:hover .en,
+  .item.active .en{ color: rgba(224,198,143,.78); }
+
+  /* ---------- 底部提示 ---------- */
+  .hint{
+    margin-top: clamp(28px, 5vh, 48px);
+    text-align: center;
+    font-size: 11px;
+    letter-spacing: .2em;
+    color: rgba(233,227,213,.3);
+    opacity: 0;
+    animation: rise 1s .95s cubic-bezier(.2,.9,.3,1) forwards;
+  }
+  kbd{
+    display: inline-block;
+    padding: 2px 6px;
+    margin: 0 2px;
+    border: 1px solid rgba(201,168,106,.28);
+    border-radius: 3px;
+    font-family: inherit;
+    font-size: 10px;
+    color: rgba(201,168,106,.62);
+  }
+
+  /* ---------- 弹层 ---------- */
+  .overlay{
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: rgba(4,4,8,.78);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .35s ease, visibility .35s ease;
+  }
+  .overlay.show{ opacity: 1; visibility: visible; }
+
+  .panel{
+    position: relative;
+    width: min(520px, 100%);
+    padding: 38px 34px 30px;
+    border: 1px solid rgba(201,168,106,.35);
+    background: linear-gradient(160deg, rgba(26,23,32,.96), rgba(11,10,15,.97));
+    box-shadow: 0 24px 80px rgba(0,0,0,.7), inset 0 0 60px rgba(201,168,106,.05);
+    transform: translateY(16px) scale(.97);
+    transition: transform .45s cubic-bezier(.2,.9,.3,1.2);
+  }
+  .overlay.show .panel{ transform: none; }
+
+  .panel::before,
+  .panel::after{
+    content:"";
+    position: absolute;
+    width: 14px; height: 14px;
+    border: 1px solid var(--gold);
+  }
+  .panel::before{ top:-1px; left:-1px; border-right:0; border-bottom:0; }
+  .panel::after{ bottom:-1px; right:-1px; border-left:0; border-top:0; }
+
+  .panel h2{
+    font-size: 21px;
+    font-weight: 500;
+    letter-spacing: .3em;
+    color: #f1e9d8;
+    margin-bottom: 18px;
+  }
+  .panel h2::after{
+    content:"";
+    display: block;
+    width: 42px; height: 1px;
+    margin-top: 14px;
+    background: linear-gradient(90deg, var(--gold), transparent);
+  }
+
+  .panel p{
+    font-size: 14.5px;
+    line-height: 2.1;
+    letter-spacing: .06em;
+    color: rgba(233,227,213,.72);
+  }
+
+  .panel-foot{
+    margin-top: 30px;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  #panelClose{
+    padding: 10px 30px;
+    background: transparent;
+    border: 1px solid rgba(201,168,106,.45);
+    color: var(--gold-lit);
+    font-family: inherit;
+    font-size: 13px;
+    letter-spacing: .3em;
+    text-indent: .3em;
+    cursor: pointer;
+    transition: background-color .3s ease, color .3s ease, box-shadow .3s ease;
+  }
+  #panelClose:hover,
+  #panelClose:focus-visible{
+    background: rgba(201,168,106,.14);
+    color: #fff6e2;
+    box-shadow: 0 0 22px rgba(201,168,106,.3);
+    outline: none;
+  }
+
+  @keyframes rise{
+    to{ opacity: 1; transform: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{
+      animation-duration: .01ms !important;
+      animation-delay: 0ms !important;
+      transition-duration: .01ms !important;
+    }
+    .item, .kicker, h1, .rule, .hint{ opacity: 1; transform: none; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="dust" aria-hidden="true"></canvas>
+<div class="glow g1" aria-hidden="true"></div>
+<div class="glow g2" aria-hidden="true"></div>
+<div class="glow g3" aria-hidden="true"></div>
+
+<main class="stage">
+  <header class="head">
+    <p class="kicker">THE THEATRE OF ILLUSION</p>
+    <h1>Golden Theatre</h1>
+    <div class="rule" aria-hidden="true"><i></i><span>❖</span><i></i></div>
+  </header>
+
+  <nav class="menu" aria-label="Main Menu">
+    <button class="item" type="button"
+      data-url="https://example.com/performance"
+      data-title="For EVERY perfect performance"
+      data-text="The curtain is about to rise. Choose your role, and confirm the script and the scene. Every choice you make will rewrite the story—and remember, in the world of theater, there are no coincidences.">
+      <span class="idx">01</span>
+      <span class="label">Performance</span>
+      <span class="en">A</span>
+    </button>
+
+    <button class="item" type="button"
+      data-url="https://example.com/actors"
+      data-title="The Golden Spine"
+      data-text="All theater actors possess extraordinary qualities; they forge their lives into artistic archetypes, playing the harp of the Muse with their very souls.">
+      <span class="idx">02</span>
+      <span class="label">Actor List</span>
+      <span class="en">B</span>
+    </button>
+
+    <button class="item" type="button"
+      data-url="https://example.com/archive"
+      data-title="Cassettes of the Past"
+      data-text="Plays that have already concluded are archived here. You can revisit past scenes, explore locked ending branches, or choose to &quot;re-enact&quot;—rewriting that ending once more.">
+      <span class="idx">03</span>
+      <span class="label">Opera Archive</span>
+      <span class="en">C</span>
+    </button>
+  </nav>
+
+  <footer class="hint">
+    <kbd>↑</kbd><kbd>↓</kbd> 选择　<kbd>Enter</kbd> 确认
+  </footer>
+</main>
+
+<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="panelTitle">
+  <div class="panel">
+    <h2 id="panelTitle"></h2>
+    <p id="panelText"></p>
+    <div class="panel-foot">
+      <button id="panelClose" type="button">返 回</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ============ 背景浮尘粒子 ============ */
+  (function dust() {
+    const canvas = document.getElementById('dust');
+    const ctx = canvas.getContext('2d');
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    let w = 0, h = 0, particles = [];
+
+    function seed() {
+      const count = Math.min(90, Math.round((w * h) / 16000));
+      particles = Array.from({ length: count }, function () {
+        return {
+          x: Math.random() * w,
+          y: Math.random() * h,
+          r: Math.random() * 1.5 + 0.4,
+          vx: (Math.random() - 0.5) * 0.12,
+          vy: -(Math.random() * 0.22 + 0.04),
+          a: Math.random() * 0.45 + 0.12,
+          ph: Math.random() * Math.PI * 2,
+          sp: Math.random() * 0.02 + 0.008
+        };
+      });
+    }
+
+    function resize() {
+      w = window.innerWidth;
+      h = window.innerHeight;
+      canvas.width = Math.floor(w * dpr);
+      canvas.height = Math.floor(h * dpr);
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      seed();
+    }
+
+    function frame() {
+      ctx.clearRect(0, 0, w, h);
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.ph += p.sp;
+
+        if (p.y < -12) { p.y = h + 12; p.x = Math.random() * w; }
+        if (p.x < -12) p.x = w + 12;
+        if (p.x > w + 12) p.x = -12;
+
+        const alpha = p.a * (0.55 + 0.45 * Math.sin(p.ph));
+        ctx.beginPath();
+        ctx.fillStyle = 'rgba(233,211,160,' + alpha.toFixed(3) + ')';
+        ctx.shadowColor = 'rgba(233,211,160,.7)';
+        ctx.shadowBlur = 7;
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      requestAnimationFrame(frame);
+    }
+
+    resize();
+    window.addEventListener('resize', resize);
+    requestAnimationFrame(frame);
+  })();
+
+  /* ============ 菜单交互 ============ */
+  const items = Array.prototype.slice.call(document.querySelectorAll('.item'));
+  const overlay = document.getElementById('overlay');
+  const panelTitle = document.getElementById('panelTitle');
+  const panelText = document.getElementById('panelText');
+  const closeBtn = document.getElementById('panelClose');
+  let current = 0;
+  let navigating = false;   // 防止跳转期间重复触发
+
+  function setActive(i) {
+    current = (i + items.length) % items.length;
+    items.forEach(function (el, n) {
+      el.classList.toggle('active', n === current);
+    });
+  }
+
+  function openPanel(title, text) {
+    panelTitle.textContent = title;
+    panelText.textContent = text;
+    overlay.classList.add('show');
+    closeBtn.focus();
+  }
+
+  function closePanel() {
+    overlay.classList.remove('show');
+    items[current].focus();
+  }
+
+  /* 跳转：先做淡出，再跳转 */
+  function goTo(url, newTab) {
+    if (navigating) return;
+    navigating = true;
+
+    if (newTab) {
+      window.open(url, '_blank', 'noopener');
+      navigating = false;
+      return;
+    }
+
+    document.body.style.transition = 'opacity .35s ease';
+    document.body.style.opacity = '0';
+
+    window.setTimeout(function () {
+      window.location.href = url;
+    }, 350);
+  }
+
+  items.forEach(function (el, i) {
+    el.addEventListener('mouseenter', function () { setActive(i); });
+    el.addEventListener('focus', function () { setActive(i); });
+    el.addEventListener('click', function () {
+      const url = el.dataset.url;
+      if (url) {
+        // 想在新标签页打开就改成 goTo(url, true)
+        goTo(url, false);
+        return;
+      }
+      // 没有配置 url 时，保留原来的弹层行为
+      openPanel(el.dataset.title, el.dataset.text);
+    });
+  });
+
+  closeBtn.addEventListener('click', closePanel);
+  overlay.addEventListener('click', function (e) {
+    if (e.target === overlay) closePanel();
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (overlay.classList.contains('show')) {
+      if (e.key === 'Escape') { e.preventDefault(); closePanel(); }
+      return;
+    }
+
+    // 焦点已在按钮上时，交给浏览器原生行为，避免重复触发
+    const onButton = document.activeElement && document.activeElement.classList.contains('item');
+
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+      e.preventDefault(); setActive(current + 1);
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+      e.preventDefault(); setActive(current - 1);
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      if (onButton) return;
+      e.preventDefault();
+      items[current].click();
+    }
+  });
+
+  setActive(0);
+})();
+</script>
+</body>
+</html>
