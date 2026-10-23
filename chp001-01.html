@@ -3,9 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>幕间剧场 · THE THEATRE OF ILLUSION</title>
+<title>剧情游戏</title>
 <style>
-  /* ==================== 全局 ==================== */
+  /* ---------- 全局变量与重置 ---------- */
+  :root{
+    --gold:      #c9a86a;
+    --gold-lit:  #e0c68f;
+    --ink:       #e9e3d5;
+    --bg-deep:   #050508;
+  }
+
   * {
     margin: 0;
     padding: 0;
@@ -17,13 +24,14 @@
     width: 100%;
     height: 100%;
     overflow: hidden;
-    background: #0a0806;
-    font-family: "Noto Serif SC", "Songti SC", "SimSun", "STSong", "Times New Roman", serif;
+    background: var(--bg-deep);
+    font-family: "Noto Serif SC", "Songti SC", STSong, "SimSun", serif;
+    -webkit-font-smoothing: antialiased;
     touch-action: manipulation;
     user-select: none;
   }
 
-  /* ==================== 游戏容器 ==================== */
+  /* ---------- 游戏主容器 ---------- */
   #game {
     position: fixed;
     top: 0;
@@ -31,10 +39,10 @@
     width: 100vw;
     height: 100vh;
     overflow: hidden;
-    background: #0a0806;
+    background: #0a0a0a;
   }
 
-  /* ==================== 背景层 ==================== */
+  /* ---------- 背景层 ---------- */
   #bg-layer {
     position: absolute;
     top: 0;
@@ -44,49 +52,50 @@
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    transition: opacity 0.6s ease;
+    transition: opacity 0.4s ease;
     z-index: 0;
   }
 
-  /* 背景暗角 + 暖色滤镜：剧场舞台感 */
-  #bg-vignette {
+  #bg-layer.fallback {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  }
+
+  /* 细微颗粒质感（参考剧场页面） */
+  #game::after {
+    content:"";
     position: absolute;
     inset: 0;
     z-index: 1;
     pointer-events: none;
-    background:
-      radial-gradient(ellipse at center, rgba(0,0,0,0) 35%, rgba(0,0,0,0.72) 100%),
-      linear-gradient(180deg, rgba(10,8,6,0.35) 0%, rgba(10,8,6,0) 30%, rgba(10,8,6,0) 65%, rgba(10,8,6,0.85) 100%);
+    background-image: radial-gradient(rgba(255,255,255,.04) 1px, transparent 1px);
+    background-size: 4px 4px;
+    opacity: .3;
   }
 
-  #bg-layer.fallback {
-    background: linear-gradient(160deg, #1a1208 0%, #2a1a0a 40%, #0a0806 100%);
-  }
-
-  /* ==================== 角色立绘 ==================== */
+  /* ---------- 角色立绘层 ---------- */
   #chara-layer {
     position: absolute;
     inset: 0;
     pointer-events: none;
     overflow: hidden;
-    z-index: 5;
+    z-index: 10;
   }
 
   .chara-slot {
     position: absolute;
     bottom: 0;
-    height: 88%;
+    height: 90%;
     display: flex;
     align-items: flex-end;
     justify-content: center;
     opacity: 0;
-    transition: opacity 0.8s ease;
+    transition: opacity 0.5s ease;
     pointer-events: none;
     will-change: opacity;
   }
 
-  #chara-left  { left: 2%; }
-  #chara-right { right: 2%; }
+  #chara-left  { left: 0; }
+  #chara-right { right: 0; }
 
   .chara-slot.visible { opacity: 1; }
 
@@ -94,17 +103,15 @@
     height: 100%;
     width: auto;
     display: block;
-    filter: brightness(1) saturate(0.9) sepia(0.08);
-    transition: filter 0.6s ease;
-    -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 82%, rgba(0,0,0,0.35) 96%, transparent 100%);
-    mask-image: linear-gradient(180deg, #000 0%, #000 82%, rgba(0,0,0,0.35) 96%, transparent 100%);
+    filter: brightness(1) saturate(1);
+    transition: filter 0.4s ease;
   }
 
   .chara-slot.dim .chara-img {
-    filter: brightness(0.32) saturate(0.35) sepia(0.15);
+    filter: brightness(0.42) saturate(0.6);
   }
 
-  /* ==================== 顶部控制栏 ==================== */
+  /* ---------- 顶部控制栏 ---------- */
   #top-bar {
     position: absolute;
     top: 0;
@@ -113,15 +120,16 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    padding: 14px 20px;
-    padding-top: calc(14px + env(safe-area-inset-top, 0px));
-    z-index: 40;
+    padding: 12px 16px;
+    padding-top: calc(12px + env(safe-area-inset-top, 0px));
+    z-index: 30;
     pointer-events: none;
   }
 
-  #top-bar > * { pointer-events: auto; }
+  #top-bar > * {
+    pointer-events: auto;
+  }
 
-  /* 倍速按钮组：剧院海报式小标签 */
   .speed-group {
     display: flex;
     gap: 6px;
@@ -129,150 +137,119 @@
   }
 
   .speed-btn {
-    background: rgba(12, 9, 6, 0.72);
-    color: #c9b892;
-    border: 1px solid rgba(201, 168, 92, 0.45);
-    border-radius: 2px;
-    padding: 6px 13px;
-    font-family: "Noto Serif SC", "Songti SC", serif;
-    font-size: 12px;
+    background: rgba(0, 0, 0, 0.45);
+    color: rgba(233, 227, 213, 0.6);
+    border: 1px solid rgba(201, 168, 106, 0.25);
+    border-radius: 4px;
+    padding: 5px 11px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
     font-weight: 600;
-    letter-spacing: 1px;
+    letter-spacing: .1em;
     cursor: pointer;
-    transition: all 0.25s ease;
+    transition: color .3s ease, border-color .3s ease, background-color .3s ease, box-shadow .3s ease;
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
   }
 
   .speed-btn.active {
-    background: rgba(201, 168, 92, 0.92);
-    color: #14100a;
-    border-color: rgba(201, 168, 92, 1);
-    box-shadow: 0 0 12px rgba(201, 168, 92, 0.25);
+    background: rgba(201, 168, 106, 0.18);
+    color: var(--gold-lit);
+    border-color: rgba(201, 168, 106, 0.65);
+    box-shadow: 0 0 14px rgba(201, 168, 106, 0.25);
   }
 
   .speed-btn:active {
     transform: scale(0.95);
   }
 
-  /* 跳过按钮：带 ❖ 装饰的舞台指令 */
   #skip-btn {
-    background: rgba(12, 9, 6, 0.72);
-    color: #d8c9a8;
-    border: 1px solid rgba(201, 168, 92, 0.5);
-    border-radius: 2px;
-    padding: 6px 16px;
-    font-family: "Noto Serif SC", "Songti SC", serif;
+    background: rgba(0, 0, 0, 0.45);
+    color: rgba(233, 227, 213, 0.6);
+    border: 1px solid rgba(201, 168, 106, 0.25);
+    border-radius: 4px;
+    padding: 5px 16px;
+    font-family: inherit;
     font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 2px;
+    letter-spacing: .2em;
+    text-indent: .2em;
     cursor: pointer;
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
-    transition: all 0.25s ease;
-  }
-
-  #skip-btn::before {
-    content: "❖ ";
-    opacity: 0.65;
+    transition: color .3s ease, border-color .3s ease, background-color .3s ease, box-shadow .3s ease;
   }
 
   #skip-btn:active {
     transform: scale(0.95);
-    background: rgba(120, 40, 30, 0.8);
-    border-color: rgba(180, 90, 70, 0.9);
-    color: #f0dcc0;
+    background: rgba(201, 168, 106, 0.18);
+    color: var(--gold-lit);
+    border-color: rgba(201, 168, 106, 0.65);
+    box-shadow: 0 0 14px rgba(201, 168, 106, 0.25);
   }
 
-  /* ==================== 底部对话框 ==================== */
+  /* ---------- 底部对话框（面板化） ---------- */
   #dialogue-box {
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
-    bottom: 0;
-    width: 100%;
-    max-width: 100%;
-    min-height: 170px;
-    max-height: 46vh;
-    background:
-      linear-gradient(180deg, rgba(12, 9, 6, 0) 0%, rgba(12, 9, 6, 0.94) 16%, rgba(8, 6, 4, 0.98) 100%);
-    border-top: 1px solid rgba(201, 168, 92, 0.18);
-    padding: 30px 40px;
-    padding-bottom: calc(26px + env(safe-area-inset-bottom, 0px));
+    bottom: 24px;
+    width: min(760px, calc(100% - 48px));
+    min-height: 140px;
+    max-height: 42vh;
+    background: linear-gradient(160deg, rgba(26,23,32,.94), rgba(11,10,15,.96));
+    border: 1px solid rgba(201,168,106,.3);
+    box-shadow: 0 18px 60px rgba(0,0,0,.65), inset 0 0 50px rgba(201,168,106,.04);
+    padding: 22px 26px;
+    padding-bottom: calc(22px + env(safe-area-inset-bottom, 0px));
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
     z-index: 20;
     cursor: pointer;
+    border-radius: 2px;
   }
 
-  /* 对话框顶部装饰线：细金线 + 中央 ❖ */
-  #dialogue-box::before {
-    content: "❖";
-    position: absolute;
-    top: -9px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 11px;
-    color: rgba(201, 168, 92, 0.55);
-    background: #0a0806;
-    padding: 0 10px;
-    line-height: 1;
-  }
-
+  /* 对话框四角装饰 */
+  #dialogue-box::before,
   #dialogue-box::after {
-    content: "";
+    content:"";
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent 0%, rgba(201, 168, 92, 0.4) 20%, rgba(201, 168, 92, 0.55) 50%, rgba(201, 168, 92, 0.4) 80%, transparent 100%);
+    width: 12px; height: 12px;
+    border: 1px solid var(--gold);
+    pointer-events: none;
   }
+  #dialogue-box::before { top:-1px; left:-1px; border-right:0; border-bottom:0; }
+  #dialogue-box::after  { bottom:-1px; right:-1px; border-left:0; border-top:0; }
 
-  /* 说话人名字 */
   #speaker-name {
-    font-family: "Noto Serif SC", "Songti SC", serif;
-    font-size: 15px;
-    font-weight: 700;
-    color: #d4b46a;
-    margin-bottom: 10px;
-    letter-spacing: 3px;
-    text-shadow: 0 1px 6px rgba(0,0,0,0.9);
-    min-height: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gold-lit);
+    margin-bottom: 8px;
+    letter-spacing: .2em;
+    text-indent: .2em;
+    text-shadow: 0 0 16px rgba(201,168,106,.3);
+    min-height: 18px;
   }
 
-  #speaker-name:not(:empty)::before {
-    content: "— ";
-    opacity: 0.5;
-  }
-
-  #speaker-name:not(:empty)::after {
-    content: " —";
-    opacity: 0.5;
-  }
-
-  /* 对话文本 */
   #dialogue-text {
-    font-family: "Noto Serif SC", "Songti SC", serif;
-    font-size: 17px;
-    line-height: 1.8;
-    color: #e8ddc8;
-    text-shadow: 0 1px 8px rgba(0,0,0,0.95);
+    font-size: 15.5px;
+    line-height: 1.9;
+    letter-spacing: .04em;
+    color: rgba(233,227,213,.88);
     word-break: break-word;
-    min-height: 1.8em;
-    letter-spacing: 0.5px;
+    min-height: 1.9em;
   }
 
   /* 打字机光标 */
   .cursor {
     display: inline-block;
-    width: 1.5px;
+    width: 2px;
     height: 1.1em;
-    background: #d4b46a;
-    margin-left: 3px;
+    background: var(--gold-lit);
+    margin-left: 2px;
     vertical-align: text-bottom;
-    animation: blink 0.9s step-end infinite;
+    animation: blink 0.8s step-end infinite;
   }
 
   @keyframes blink {
@@ -284,131 +261,119 @@
   #continue-hint {
     position: absolute;
     bottom: 10px;
-    right: 40px;
-    font-size: 11px;
-    color: rgba(201, 168, 92, 0.45);
-    letter-spacing: 1px;
-    animation: float 2s ease-in-out infinite;
+    right: 20px;
+    font-family: ui-monospace, monospace;
+    font-size: 10px;
+    letter-spacing: .15em;
+    color: rgba(201,168,106,.4);
+    animation: float 1.6s ease-in-out infinite;
     display: none;
   }
 
   @keyframes float {
-    0%, 100% { transform: translateY(0); opacity: 0.45; }
-    50% { transform: translateY(-3px); opacity: 0.85; }
+    0%, 100% { transform: translateY(0); opacity: .4; }
+    50% { transform: translateY(-3px); opacity: .85; }
   }
 
-  /* ==================== 跳过弹窗 ==================== */
+  /* ---------- 跳过弹窗（复用剧场面板风格） ---------- */
   #skip-modal-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(6, 5, 3, 0.82);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    display: none;
-    align-items: center;
-    justify-content: center;
+    inset: 0;
     z-index: 100;
-    padding: 28px;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: rgba(4,4,8,.78);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .35s ease, visibility .35s ease;
   }
 
-  #skip-modal-overlay.show { display: flex; }
+  #skip-modal-overlay.show {
+    opacity: 1;
+    visibility: visible;
+  }
 
   #skip-modal {
     position: relative;
-    background: linear-gradient(170deg, #18120a 0%, #0e0a06 100%);
-    border: 1px solid rgba(201, 168, 92, 0.35);
-    border-radius: 3px;
-    padding: 34px 32px 28px;
-    max-width: 560px;
-    width: 100%;
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.85), inset 0 0 60px rgba(201, 168, 92, 0.03);
-    animation: modalIn 0.35s ease-out;
+    width: min(520px, 100%);
+    padding: 34px 30px 26px;
+    border: 1px solid rgba(201,168,106,.35);
+    background: linear-gradient(160deg, rgba(26,23,32,.96), rgba(11,10,15,.97));
+    box-shadow: 0 24px 80px rgba(0,0,0,.7), inset 0 0 60px rgba(201,168,106,.05);
+    transform: translateY(16px) scale(.97);
+    transition: transform .45s cubic-bezier(.2,.9,.3,1.2);
     cursor: pointer;
   }
 
-  /* 弹窗四角 ❖ 装饰 */
+  #skip-modal-overlay.show #skip-modal {
+    transform: none;
+  }
+
   #skip-modal::before,
   #skip-modal::after {
-    content: "❖";
+    content:"";
     position: absolute;
-    font-size: 10px;
-    color: rgba(201, 168, 92, 0.4);
+    width: 14px; height: 14px;
+    border: 1px solid var(--gold);
   }
-
-  #skip-modal::before { top: 10px; left: 14px; }
-  #skip-modal::after  { bottom: 10px; right: 14px; }
-
-  @keyframes modalIn {
-    from { opacity: 0; transform: scale(0.94) translateY(14px); }
-    to   { opacity: 1; transform: scale(1) translateY(0); }
-  }
+  #skip-modal::before { top:-1px; left:-1px; border-right:0; border-bottom:0; }
+  #skip-modal::after  { bottom:-1px; right:-1px; border-left:0; border-top:0; }
 
   #skip-modal h3 {
-    font-family: "Noto Serif SC", "Songti SC", serif;
-    font-size: 15px;
-    color: #d4b46a;
-    margin-bottom: 18px;
-    font-weight: 700;
-    letter-spacing: 4px;
-    text-align: center;
-  }
-
-  #skip-modal h3::before {
-    content: "— ";
-    opacity: 0.5;
+    font-size: 19px;
+    font-weight: 500;
+    letter-spacing: .3em;
+    color: #f1e9d8;
+    margin-bottom: 16px;
   }
 
   #skip-modal h3::after {
-    content: " —";
-    opacity: 0.5;
+    content:"";
+    display: block;
+    width: 42px; height: 1px;
+    margin-top: 14px;
+    background: linear-gradient(90deg, var(--gold), transparent);
   }
 
   #skip-modal p {
-    font-family: "Noto Serif SC", "Songti SC", serif;
-    font-size: 15px;
-    line-height: 1.85;
-    color: #c4b89e;
-    margin-bottom: 22px;
-    letter-spacing: 0.5px;
-    text-align: justify;
+    font-size: 14px;
+    line-height: 2;
+    letter-spacing: .05em;
+    color: rgba(233,227,213,.72);
+    margin-bottom: 16px;
   }
 
   #skip-modal .modal-hint {
     font-size: 11px;
-    color: rgba(201, 168, 92, 0.35);
+    color: rgba(201,168,106,.4);
     text-align: center;
     margin-bottom: 0;
-    letter-spacing: 2px;
-    animation: float 2s ease-in-out infinite;
+    animation: float 1.6s ease-in-out infinite;
   }
 
-  /* ==================== 竖屏提示 ==================== */
+  /* ---------- 竖屏提示覆盖层 ---------- */
   #rotate-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: #0a0806;
+    inset: 0;
+    background: #0a0a12;
     display: none;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     z-index: 200;
-    color: #d4b46a;
+    color: var(--ink);
     text-align: center;
     padding: 24px;
-    font-family: "Noto Serif SC", "Songti SC", serif;
+    font-family: "Noto Serif SC", "Songti SC", STSong, "SimSun", serif;
   }
 
   #rotate-overlay .rotate-icon {
-    font-size: 50px;
-    margin-bottom: 22px;
-    animation: rotateHint 2.2s ease-in-out infinite;
-    opacity: 0.85;
+    font-size: 48px;
+    margin-bottom: 20px;
+    animation: rotateHint 2s ease-in-out infinite;
   }
 
   @keyframes rotateHint {
@@ -418,28 +383,43 @@
 
   #rotate-overlay p {
     font-size: 15px;
-    color: #a89878;
+    color: rgba(233,227,213,.5);
     line-height: 1.8;
-    letter-spacing: 2px;
+    letter-spacing: .1em;
   }
 
   @media (orientation: portrait) {
-    #rotate-overlay { display: flex; }
-    #game { visibility: hidden; }
+    #rotate-overlay {
+      display: flex;
+    }
+    #game {
+      visibility: hidden;
+    }
+  }
+
+  /* ---------- 减少动画偏好 ---------- */
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: .01ms !important;
+      animation-delay: 0ms !important;
+      transition-duration: .01ms !important;
+    }
   }
 </style>
 </head>
 <body>
 
+<!-- 竖屏提示 -->
 <div id="rotate-overlay">
-  <div class="rotate-icon">❖</div>
+  <div class="rotate-icon">📱</div>
   <p>请将手机横屏使用<br>以获得最佳游戏体验</p>
 </div>
 
+<!-- 游戏主容器 -->
 <div id="game">
   <div id="bg-layer"></div>
-  <div id="bg-vignette"></div>
 
+  <!-- 角色立绘层 -->
   <div id="chara-layer">
     <div class="chara-slot" id="chara-left">
       <img class="chara-img" alt="chrt01">
@@ -449,6 +429,7 @@
     </div>
   </div>
 
+  <!-- 顶部控制栏 -->
   <div id="top-bar">
     <div class="speed-group">
       <button class="speed-btn active" data-speed="1">NO</button>
@@ -459,17 +440,19 @@
     <button id="skip-btn">跳过 ▶▶</button>
   </div>
 
+  <!-- 底部对话框 -->
   <div id="dialogue-box">
     <div id="speaker-name"></div>
     <div id="dialogue-text"></div>
     <div id="continue-hint">点击继续 ▼</div>
   </div>
 
+  <!-- 跳过弹窗 -->
   <div id="skip-modal-overlay">
     <div id="skip-modal">
-      <h3>剧目简略</h3>
+      <h3>📖 剧情简略</h3>
       <p id="skip-summary"></p>
-      <p class="modal-hint">❖ 点击任意位置继续下一幕 ❖</p>
+      <p class="modal-hint">点击任意位置继续下一幕</p>
     </div>
   </div>
 </div>
@@ -480,23 +463,16 @@
 
   // ==================== 配置 ====================
   const CONFIG = {
-    // ⚠️ 请核对仓库名拼写：origincharacter001 / originccharacter001
     imageBase: 'https://cdn.jsdelivr.net/gh/FanyDay102/originccharacter001@main',
     audioBase: 'https://cdn.jsdelivr.net/gh/FanyDay102/originccharacter001@main',
-
     baseTypeSpeed: 45,
     baseAutoDelay: 4400,
     fadeDuration: 400,
-
     bgmVolume: 0.4,
     bgmFadeDuration: 800,
   };
 
   // ==================== 剧情数据 ====================
-  // 幕级：bg / bgm / summary / dialogues
-  // 句级：{ speaker, text, chara, bgm? }
-  //   chara: 'chrt01' 左 / 'chrt02' 右 / null 旁白
-  //   bgm:   不写 = 不变；'xxx.mp3' = 切换；null / '' = 停止
   const story = [
     {
       bg: 'bg001room.png',
@@ -544,7 +520,7 @@
   let skipModalVisible = false;
   let hasStarted = false;
 
-  // ==================== DOM ====================
+  // ==================== DOM 引用 ====================
   const $game = document.getElementById('game');
   const $bgLayer = document.getElementById('bg-layer');
   const $speakerName = document.getElementById('speaker-name');
@@ -557,7 +533,7 @@
   const $charaLeft = document.getElementById('chara-left');
   const $charaRight = document.getElementById('chara-right');
 
-  // ==================== 工具 ====================
+  // ==================== 工具函数 ====================
   function getBgUrl(filename) { return CONFIG.imageBase + '/' + filename; }
   function getCharaUrl(name) { return CONFIG.imageBase + '/' + name + '.png'; }
   function getAudioUrl(filename) { return CONFIG.audioBase + '/' + filename; }
@@ -589,7 +565,7 @@
   function getTypeSpeed() { return CONFIG.baseTypeSpeed / speed; }
   function getAutoDelay() { return CONFIG.baseAutoDelay / speed; }
 
-  // ==================== BGM ====================
+  // ==================== BGM 管理 ====================
   let currentBgm = null;
   let pendingBgmName = '';
   let bgmUnlocked = false;
@@ -619,7 +595,11 @@
     const fade = (typeof fadeDuration === 'number') ? fadeDuration : CONFIG.bgmFadeDuration;
     const target = filename || '';
 
-    if (!bgmUnlocked) { pendingBgmName = target; return; }
+    if (!bgmUnlocked) {
+      pendingBgmName = target;
+      return;
+    }
+
     if (currentBgm && currentBgm.name === target) return;
     if (!currentBgm && !target) return;
 
@@ -661,7 +641,7 @@
     if (name) switchBgm(name);
   }
 
-  // ==================== 角色 ====================
+  // ==================== 角色立绘控制 ====================
   function applyChara(charaName) {
     const leftLit  = charaName === 'chrt01';
     const rightLit = charaName === 'chrt02';
@@ -706,7 +686,7 @@
     });
   }
 
-  // ==================== 打字机 ====================
+  // ==================== 打字机效果 ====================
   function startDialogue() {
     clearTypingTimer();
     clearAutoTimer();
@@ -731,8 +711,8 @@
     $continueHint.style.display = 'none';
 
     isTyping = true;
-    const speedMs = getTypeSpeed();
 
+    const speedMs = getTypeSpeed();
     typeTimer = setInterval(function() {
       if (charIndex < fullText.length) {
         displayedText += fullText.charAt(charIndex);
@@ -740,6 +720,7 @@
         $dialogueText.textContent = displayedText;
       } else {
         clearTypingTimer();
+        isTyping = false;
         $dialogueText.innerHTML = displayedText + '<span class="cursor"></span>';
         $continueHint.style.display = 'block';
         scheduleAutoAdvance();
@@ -753,6 +734,7 @@
     displayedText = fullText;
     charIndex = fullText.length;
     $dialogueText.innerHTML = displayedText + '<span class="cursor"></span>';
+    isTyping = false;
     $continueHint.style.display = 'block';
     scheduleAutoAdvance();
   }
@@ -784,6 +766,7 @@
         $dialogueText.textContent = displayedText;
       } else {
         clearTypingTimer();
+        isTyping = false;
         $dialogueText.innerHTML = displayedText + '<span class="cursor"></span>';
         $continueHint.style.display = 'block';
         scheduleAutoAdvance();
@@ -791,17 +774,12 @@
     }, Math.max(speedMs, 8));
   }
 
-  // ==================== 推进 ====================
+  // ==================== 对话推进 ====================
   function handleDialogueClick() {
     if (skipModalVisible) return;
     if (isTransitioning) return;
-
     clearAutoTimer();
-
-    if (!hasStarted) {
-      hasStarted = true;
-      tryLockLandscape();
-    }
+    if (!hasStarted) { hasStarted = true; tryLockLandscape(); }
 
     if (isTyping) { completeTyping(); return; }
 
@@ -819,9 +797,9 @@
   // ==================== 场景切换 ====================
   function nextScene() {
     if (isTransitioning) return;
-
     clearAutoTimer();
     clearTypingTimer();
+
     sceneIndex++;
 
     if (sceneIndex >= story.length) {
@@ -829,7 +807,7 @@
       $dialogueText.innerHTML = '— 全剧终 —';
       $continueHint.style.display = 'none';
       $skipBtn.disabled = true;
-      $skipBtn.style.opacity = '0.35';
+      $skipBtn.style.opacity = '0.4';
       switchBgm('');
       return;
     }
@@ -843,7 +821,6 @@
       resetCharacters();
       dialogueIndex = 0;
       switchBgm(newScene.bgm || '');
-
       $speakerName.textContent = '';
       $dialogueText.innerHTML = '';
       $continueHint.style.display = 'none';
@@ -856,14 +833,12 @@
     }, CONFIG.fadeDuration);
   }
 
-  // ==================== 跳过 ====================
+  // ==================== 跳过功能 ====================
   function showSkipModal() {
     if (isTransitioning) return;
     if (skipModalVisible) return;
-
     const scene = story[sceneIndex];
     if (!scene) return;
-
     $skipSummary.textContent = scene.summary || '（暂无简略剧情）';
     $skipModalOverlay.classList.add('show');
     skipModalVisible = true;
@@ -878,11 +853,12 @@
     nextScene();
   }
 
-  // ==================== 倍速 ====================
+  // ==================== 倍速控制 ====================
   function setSpeed(newSpeed) {
     speed = newSpeed;
     $speedBtns.forEach(function(btn) {
-      btn.classList.toggle('active', parseInt(btn.dataset.speed, 10) === newSpeed);
+      const s = parseInt(btn.dataset.speed, 10);
+      btn.classList.toggle('active', s === newSpeed);
     });
 
     if (isTyping) { restartTyping(); return; }
@@ -890,11 +866,13 @@
     if (speed < 2) {
       clearAutoTimer();
     } else {
-      if ($continueHint.style.display === 'block') scheduleAutoAdvance();
+      if ($continueHint.style.display === 'block') {
+        scheduleAutoAdvance();
+      }
     }
   }
 
-  // ==================== 横屏锁定 ====================
+  // ==================== 屏幕方向锁定 ====================
   function tryLockLandscape() {
     if (screen.orientation && screen.orientation.lock) {
       screen.orientation.lock('landscape').catch(function(err) {
@@ -915,7 +893,7 @@
     startDialogue();
   }
 
-  // ==================== 事件 ====================
+  // ==================== 事件绑定 ====================
   $game.addEventListener('click', function(e) {
     if (e.target.closest('#top-bar')) return;
     if (e.target.closest('#skip-modal-overlay')) return;
@@ -935,7 +913,8 @@
   $speedBtns.forEach(function(btn) {
     btn.addEventListener('click', function(e) {
       e.stopPropagation();
-      setSpeed(parseInt(btn.dataset.speed, 10));
+      const s = parseInt(btn.dataset.speed, 10);
+      setSpeed(s);
     });
   });
 
@@ -954,6 +933,7 @@
   document.addEventListener('keydown', unlockBgm, { once: true });
 
   init();
+
 })();
 </script>
 </body>
