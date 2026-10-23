@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>剧情游戏</title>
+<title>幕间剧场 · THE THEATRE OF ILLUSION</title>
 <style>
-  /* ---------- 全局重置 ---------- */
+  /* ==================== 全局 ==================== */
   * {
     margin: 0;
     padding: 0;
@@ -17,13 +17,13 @@
     width: 100%;
     height: 100%;
     overflow: hidden;
-    background: #000;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: #0a0806;
+    font-family: "Noto Serif SC", "Songti SC", "SimSun", "STSong", "Times New Roman", serif;
     touch-action: manipulation;
     user-select: none;
   }
 
-  /* ---------- 游戏主容器 ---------- */
+  /* ==================== 游戏容器 ==================== */
   #game {
     position: fixed;
     top: 0;
@@ -31,10 +31,10 @@
     width: 100vw;
     height: 100vh;
     overflow: hidden;
-    background: #0a0a0a;
+    background: #0a0806;
   }
 
-  /* ---------- 背景层 ---------- */
+  /* ==================== 背景层 ==================== */
   #bg-layer {
     position: absolute;
     top: 0;
@@ -44,39 +44,49 @@
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    transition: opacity 0.4s ease;
+    transition: opacity 0.6s ease;
     z-index: 0;
   }
 
-  /* 背景占位渐变（图片加载失败时显示） */
-  #bg-layer.fallback {
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  /* 背景暗角 + 暖色滤镜：剧场舞台感 */
+  #bg-vignette {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse at center, rgba(0,0,0,0) 35%, rgba(0,0,0,0.72) 100%),
+      linear-gradient(180deg, rgba(10,8,6,0.35) 0%, rgba(10,8,6,0) 30%, rgba(10,8,6,0) 65%, rgba(10,8,6,0.85) 100%);
   }
 
-  /* ---------- 角色立绘层 ---------- */
+  #bg-layer.fallback {
+    background: linear-gradient(160deg, #1a1208 0%, #2a1a0a 40%, #0a0806 100%);
+  }
+
+  /* ==================== 角色立绘 ==================== */
   #chara-layer {
     position: absolute;
     inset: 0;
     pointer-events: none;
     overflow: hidden;
-    z-index: 10;
+    z-index: 5;
   }
 
   .chara-slot {
     position: absolute;
     bottom: 0;
-    height: 90%;
+    height: 88%;
     display: flex;
     align-items: flex-end;
     justify-content: center;
     opacity: 0;
-    transition: opacity 0.5s ease;
+    transition: opacity 0.8s ease;
     pointer-events: none;
     will-change: opacity;
   }
 
-  #chara-left  { left: 0; }
-  #chara-right { right: 0; }
+  #chara-left  { left: 2%; }
+  #chara-right { right: 2%; }
 
   .chara-slot.visible { opacity: 1; }
 
@@ -84,15 +94,17 @@
     height: 100%;
     width: auto;
     display: block;
-    filter: brightness(1) saturate(1);
-    transition: filter 0.4s ease;
+    filter: brightness(1) saturate(0.9) sepia(0.08);
+    transition: filter 0.6s ease;
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 82%, rgba(0,0,0,0.35) 96%, transparent 100%);
+    mask-image: linear-gradient(180deg, #000 0%, #000 82%, rgba(0,0,0,0.35) 96%, transparent 100%);
   }
 
   .chara-slot.dim .chara-img {
-    filter: brightness(0.42) saturate(0.6);
+    filter: brightness(0.32) saturate(0.35) sepia(0.15);
   }
 
-  /* ---------- 顶部控制栏 ---------- */
+  /* ==================== 顶部控制栏 ==================== */
   #top-bar {
     position: absolute;
     top: 0;
@@ -101,77 +113,92 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    padding: 12px 16px;
-    padding-top: calc(12px + env(safe-area-inset-top, 0px));
-    z-index: 30;
+    padding: 14px 20px;
+    padding-top: calc(14px + env(safe-area-inset-top, 0px));
+    z-index: 40;
     pointer-events: none;
   }
 
-  #top-bar > * {
-    pointer-events: auto;
-  }
+  #top-bar > * { pointer-events: auto; }
 
+  /* 倍速按钮组：剧院海报式小标签 */
   .speed-group {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     align-items: center;
   }
 
   .speed-btn {
-    background: rgba(0, 0, 0, 0.55);
-    color: #ccc;
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    border-radius: 8px;
-    padding: 6px 12px;
-    font-size: 13px;
+    background: rgba(12, 9, 6, 0.72);
+    color: #c9b892;
+    border: 1px solid rgba(201, 168, 92, 0.45);
+    border-radius: 2px;
+    padding: 6px 13px;
+    font-family: "Noto Serif SC", "Songti SC", serif;
+    font-size: 12px;
     font-weight: 600;
+    letter-spacing: 1px;
     cursor: pointer;
-    transition: all 0.2s ease;
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    transition: all 0.25s ease;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
   }
 
   .speed-btn.active {
-    background: rgba(255, 200, 50, 0.85);
-    color: #111;
-    border-color: rgba(255, 200, 50, 1);
+    background: rgba(201, 168, 92, 0.92);
+    color: #14100a;
+    border-color: rgba(201, 168, 92, 1);
+    box-shadow: 0 0 12px rgba(201, 168, 92, 0.25);
   }
 
   .speed-btn:active {
-    transform: scale(0.94);
+    transform: scale(0.95);
   }
 
+  /* 跳过按钮：带 ❖ 装饰的舞台指令 */
   #skip-btn {
-    background: rgba(0, 0, 0, 0.55);
-    color: #fff;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 8px;
+    background: rgba(12, 9, 6, 0.72);
+    color: #d8c9a8;
+    border: 1px solid rgba(201, 168, 92, 0.5);
+    border-radius: 2px;
     padding: 6px 16px;
-    font-size: 14px;
+    font-family: "Noto Serif SC", "Songti SC", serif;
+    font-size: 12px;
     font-weight: 600;
+    letter-spacing: 2px;
     cursor: pointer;
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    transition: all 0.2s ease;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    transition: all 0.25s ease;
+  }
+
+  #skip-btn::before {
+    content: "❖ ";
+    opacity: 0.65;
   }
 
   #skip-btn:active {
-    transform: scale(0.94);
-    background: rgba(255, 80, 80, 0.7);
-    border-color: rgba(255, 80, 80, 0.9);
+    transform: scale(0.95);
+    background: rgba(120, 40, 30, 0.8);
+    border-color: rgba(180, 90, 70, 0.9);
+    color: #f0dcc0;
   }
 
-  /* ---------- 底部对话框 ---------- */
+  /* ==================== 底部对话框 ==================== */
   #dialogue-box {
     position: absolute;
-    left: 0;
-    right: 0;
+    left: 50%;
+    transform: translateX(-50%);
     bottom: 0;
-    min-height: 160px;
-    max-height: 42vh;
-    background: linear-gradient(180deg, rgba(10, 10, 20, 0.0) 0%, rgba(10, 10, 20, 0.92) 18%, rgba(8, 8, 16, 0.97) 100%);
-    padding: 28px 24px;
-    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    width: 100%;
+    max-width: 100%;
+    min-height: 170px;
+    max-height: 46vh;
+    background:
+      linear-gradient(180deg, rgba(12, 9, 6, 0) 0%, rgba(12, 9, 6, 0.94) 16%, rgba(8, 6, 4, 0.98) 100%);
+    border-top: 1px solid rgba(201, 168, 92, 0.18);
+    padding: 30px 40px;
+    padding-bottom: calc(26px + env(safe-area-inset-bottom, 0px));
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
@@ -179,34 +206,73 @@
     cursor: pointer;
   }
 
+  /* 对话框顶部装饰线：细金线 + 中央 ❖ */
+  #dialogue-box::before {
+    content: "❖";
+    position: absolute;
+    top: -9px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    color: rgba(201, 168, 92, 0.55);
+    background: #0a0806;
+    padding: 0 10px;
+    line-height: 1;
+  }
+
+  #dialogue-box::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(201, 168, 92, 0.4) 20%, rgba(201, 168, 92, 0.55) 50%, rgba(201, 168, 92, 0.4) 80%, transparent 100%);
+  }
+
+  /* 说话人名字 */
   #speaker-name {
+    font-family: "Noto Serif SC", "Songti SC", serif;
     font-size: 15px;
     font-weight: 700;
-    color: #ffd764;
-    margin-bottom: 8px;
-    letter-spacing: 0.5px;
-    text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+    color: #d4b46a;
+    margin-bottom: 10px;
+    letter-spacing: 3px;
+    text-shadow: 0 1px 6px rgba(0,0,0,0.9);
     min-height: 20px;
   }
 
+  #speaker-name:not(:empty)::before {
+    content: "— ";
+    opacity: 0.5;
+  }
+
+  #speaker-name:not(:empty)::after {
+    content: " —";
+    opacity: 0.5;
+  }
+
+  /* 对话文本 */
   #dialogue-text {
+    font-family: "Noto Serif SC", "Songti SC", serif;
     font-size: 17px;
-    line-height: 1.65;
-    color: #f0f0f0;
-    text-shadow: 0 1px 6px rgba(0,0,0,0.8);
+    line-height: 1.8;
+    color: #e8ddc8;
+    text-shadow: 0 1px 8px rgba(0,0,0,0.95);
     word-break: break-word;
-    min-height: 1.65em;
+    min-height: 1.8em;
+    letter-spacing: 0.5px;
   }
 
   /* 打字机光标 */
   .cursor {
     display: inline-block;
-    width: 2px;
+    width: 1.5px;
     height: 1.1em;
-    background: #ffd764;
-    margin-left: 2px;
+    background: #d4b46a;
+    margin-left: 3px;
     vertical-align: text-bottom;
-    animation: blink 0.8s step-end infinite;
+    animation: blink 0.9s step-end infinite;
   }
 
   @keyframes blink {
@@ -217,102 +283,132 @@
   /* 点击继续提示 */
   #continue-hint {
     position: absolute;
-    bottom: 12px;
-    right: 20px;
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.55);
-    animation: float 1.6s ease-in-out infinite;
+    bottom: 10px;
+    right: 40px;
+    font-size: 11px;
+    color: rgba(201, 168, 92, 0.45);
+    letter-spacing: 1px;
+    animation: float 2s ease-in-out infinite;
     display: none;
   }
 
   @keyframes float {
-    0%, 100% { transform: translateY(0); opacity: 0.55; }
-    50% { transform: translateY(-4px); opacity: 1; }
+    0%, 100% { transform: translateY(0); opacity: 0.45; }
+    50% { transform: translateY(-3px); opacity: 0.85; }
   }
 
-  /* ---------- 跳过弹窗 ---------- */
+  /* ==================== 跳过弹窗 ==================== */
   #skip-modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.78);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: rgba(6, 5, 3, 0.82);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     display: none;
     align-items: center;
     justify-content: center;
     z-index: 100;
-    padding: 24px;
+    padding: 28px;
   }
 
-  #skip-modal-overlay.show {
-    display: flex;
-  }
+  #skip-modal-overlay.show { display: flex; }
 
   #skip-modal {
-    background: linear-gradient(160deg, #1e1e2e 0%, #14141f 100%);
-    border: 1px solid rgba(255, 215, 100, 0.25);
-    border-radius: 16px;
-    padding: 28px 24px;
-    max-width: 520px;
+    position: relative;
+    background: linear-gradient(170deg, #18120a 0%, #0e0a06 100%);
+    border: 1px solid rgba(201, 168, 92, 0.35);
+    border-radius: 3px;
+    padding: 34px 32px 28px;
+    max-width: 560px;
     width: 100%;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
-    animation: modalIn 0.28s ease-out;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.85), inset 0 0 60px rgba(201, 168, 92, 0.03);
+    animation: modalIn 0.35s ease-out;
     cursor: pointer;
   }
 
+  /* 弹窗四角 ❖ 装饰 */
+  #skip-modal::before,
+  #skip-modal::after {
+    content: "❖";
+    position: absolute;
+    font-size: 10px;
+    color: rgba(201, 168, 92, 0.4);
+  }
+
+  #skip-modal::before { top: 10px; left: 14px; }
+  #skip-modal::after  { bottom: 10px; right: 14px; }
+
   @keyframes modalIn {
-    from { opacity: 0; transform: scale(0.92) translateY(12px); }
+    from { opacity: 0; transform: scale(0.94) translateY(14px); }
     to   { opacity: 1; transform: scale(1) translateY(0); }
   }
 
   #skip-modal h3 {
-    font-size: 16px;
-    color: #ffd764;
-    margin-bottom: 14px;
+    font-family: "Noto Serif SC", "Songti SC", serif;
+    font-size: 15px;
+    color: #d4b46a;
+    margin-bottom: 18px;
     font-weight: 700;
-    letter-spacing: 0.5px;
+    letter-spacing: 4px;
+    text-align: center;
+  }
+
+  #skip-modal h3::before {
+    content: "— ";
+    opacity: 0.5;
+  }
+
+  #skip-modal h3::after {
+    content: " —";
+    opacity: 0.5;
   }
 
   #skip-modal p {
+    font-family: "Noto Serif SC", "Songti SC", serif;
     font-size: 15px;
-    line-height: 1.7;
-    color: #d0d0d8;
-    margin-bottom: 18px;
+    line-height: 1.85;
+    color: #c4b89e;
+    margin-bottom: 22px;
+    letter-spacing: 0.5px;
+    text-align: justify;
   }
 
   #skip-modal .modal-hint {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.4);
+    font-size: 11px;
+    color: rgba(201, 168, 92, 0.35);
     text-align: center;
     margin-bottom: 0;
-    animation: float 1.6s ease-in-out infinite;
+    letter-spacing: 2px;
+    animation: float 2s ease-in-out infinite;
   }
 
-  /* ---------- 竖屏提示覆盖层 ---------- */
+  /* ==================== 竖屏提示 ==================== */
   #rotate-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: #0a0a12;
+    background: #0a0806;
     display: none;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     z-index: 200;
-    color: #fff;
+    color: #d4b46a;
     text-align: center;
     padding: 24px;
+    font-family: "Noto Serif SC", "Songti SC", serif;
   }
 
   #rotate-overlay .rotate-icon {
-    font-size: 56px;
-    margin-bottom: 20px;
-    animation: rotateHint 2s ease-in-out infinite;
+    font-size: 50px;
+    margin-bottom: 22px;
+    animation: rotateHint 2.2s ease-in-out infinite;
+    opacity: 0.85;
   }
 
   @keyframes rotateHint {
@@ -321,35 +417,29 @@
   }
 
   #rotate-overlay p {
-    font-size: 16px;
-    color: #aaa;
-    line-height: 1.6;
+    font-size: 15px;
+    color: #a89878;
+    line-height: 1.8;
+    letter-spacing: 2px;
   }
 
-  /* 竖屏时显示提示 */
   @media (orientation: portrait) {
-    #rotate-overlay {
-      display: flex;
-    }
-    #game {
-      visibility: hidden;
-    }
+    #rotate-overlay { display: flex; }
+    #game { visibility: hidden; }
   }
 </style>
 </head>
 <body>
 
-<!-- 竖屏提示 -->
 <div id="rotate-overlay">
-  <div class="rotate-icon">📱</div>
+  <div class="rotate-icon">❖</div>
   <p>请将手机横屏使用<br>以获得最佳游戏体验</p>
 </div>
 
-<!-- 游戏主容器 -->
 <div id="game">
   <div id="bg-layer"></div>
+  <div id="bg-vignette"></div>
 
-  <!-- 角色立绘层 -->
   <div id="chara-layer">
     <div class="chara-slot" id="chara-left">
       <img class="chara-img" alt="chrt01">
@@ -359,7 +449,6 @@
     </div>
   </div>
 
-  <!-- 顶部控制栏 -->
   <div id="top-bar">
     <div class="speed-group">
       <button class="speed-btn active" data-speed="1">NO</button>
@@ -370,19 +459,17 @@
     <button id="skip-btn">跳过 ▶▶</button>
   </div>
 
-  <!-- 底部对话框 -->
   <div id="dialogue-box">
     <div id="speaker-name"></div>
     <div id="dialogue-text"></div>
     <div id="continue-hint">点击继续 ▼</div>
   </div>
 
-  <!-- 跳过弹窗 -->
   <div id="skip-modal-overlay">
     <div id="skip-modal">
-      <h3>📖 剧情简略</h3>
+      <h3>剧目简略</h3>
       <p id="skip-summary"></p>
-      <p class="modal-hint">点击任意位置继续下一幕</p>
+      <p class="modal-hint">❖ 点击任意位置继续下一幕 ❖</p>
     </div>
   </div>
 </div>
@@ -393,60 +480,31 @@
 
   // ==================== 配置 ====================
   const CONFIG = {
-    // 图片 CDN 基础路径（使用 jsDelivr 加速 GitHub 仓库）
     // ⚠️ 请核对仓库名拼写：origincharacter001 / originccharacter001
     imageBase: 'https://cdn.jsdelivr.net/gh/FanyDay102/originccharacter001@main',
-
-    // 音频 CDN 基础路径
-    // 如果 BGM 和图片放在同一个仓库同一目录，保持与 imageBase 一致即可
-    // 也可以改成别的 CDN / 仓库路径
     audioBase: 'https://cdn.jsdelivr.net/gh/FanyDay102/originccharacter001@main',
 
-    // 打字机基础速度：每个字符的毫秒数（NO 模式下）
-    // 在 x2/x3/x4 模式下，实际速度 = baseTypeSpeed / 倍速
     baseTypeSpeed: 45,
-
-    // 自动推进基础等待时间：x2 倍速下打字完成后等待多久自动进入下一句
-    // 实际等待时间 = baseAutoDelay / 当前倍速
-    // x2: 2200ms  x3: 1466ms  x4: 1100ms
-    // NO 模式不会自动推进，用户必须手动点击
     baseAutoDelay: 4400,
-
-    // 每一幕之间的淡入淡出时间（毫秒）
     fadeDuration: 400,
 
-    // ---------- BGM 配置 ----------
-    // BGM 音量（0 ~ 1），0.4 左右比较适合作为背景音乐
     bgmVolume: 0.4,
-    // BGM 切换时的淡入/淡出时长（毫秒）
     bgmFadeDuration: 800,
   };
 
   // ==================== 剧情数据 ====================
-  // 每一幕 (scene) 包含:
-  //   bg        - 背景图片文件名
-  //   bgm       - （可选）进入该幕时播放的 BGM 文件名；不写则停止当前 BGM
-  //               想让 BGM 跨幕延续，就在新幕里重复写同一个文件名即可
-  //   summary   - 跳过弹窗显示的简略剧情
-  //   dialogues - 对话数组，每句 { speaker, text, chara, bgm? }
-  //
-  // 每句对话的 chara 字段：
-  //   'chrt01' → 左边角色（chrt01.png）高亮，右边变暗
-  //   'chrt02' → 右边角色（chrt02.png）高亮，左边变暗
-  //   null     → 旁白/主角独白，两边角色都变暗
-  //
-  // 每句对话的 bgm 字段（可选，句级切换）：
-  //   不写      → 保持当前 BGM 不变
-  //   'xxx.mp3' → 切换到指定 BGM
-  //   '' 或 null → 停止当前 BGM
+  // 幕级：bg / bgm / summary / dialogues
+  // 句级：{ speaker, text, chara, bgm? }
+  //   chara: 'chrt01' 左 / 'chrt02' 右 / null 旁白
+  //   bgm:   不写 = 不变；'xxx.mp3' = 切换；null / '' = 停止
   const story = [
     {
       bg: 'bg001room.png',
-      bgm: 'bgm001.mp3',   // ← 第一幕 BGM
-      summary: '你在一个陌生的房间醒来，空气中弥漫着消毒水的气味。你失去所有记忆，仅仅记得自己的名字。一位自称为你养子的少女协同3位伙伴将你从[塔]的大楼中救出，并一路逃往Ontario。"',
+      bgm: 'bgm001.mp3',
+      summary: '你在一个陌生的房间醒来，空气中弥漫着消毒水的气味。你失去所有记忆，仅仅记得自己的名字。一位自称为你养子的少女协同3位伙伴将你从[塔]的大楼中救出，并一路逃往Ontario。',
       dialogues: [
         { speaker: '旁白', text: '你缓缓睁开眼睛，视线逐渐聚焦。', chara: null },
-        { speaker: '旁白', text: '最先映入眼帘的是晃眼的白色天花板，以及置于顶端的LED白灯管。耳边是[滴滴答]作响的仪器，喉管被异物入侵的不适感随之而来。你确信你不是自主呼吸，那些冰冷的空气充满化学工业的气息。', chara: 'null' },
+        { speaker: '旁白', text: '最先映入眼帘的是晃眼的白色天花板，以及置于顶端的LED白灯管。耳边是[滴滴答]作响的仪器，喉管被异物入侵的不适感随之而来。你确信你不是自主呼吸，那些冰冷的空气充满化学工业的气息。', chara: null },
         { speaker: '旁白', text: '可无论如何，你什么都做不了，哪怕只是晃动眼球都撕扯地眼部剧痛......', chara: 'chrt01' },
         { speaker: '你', text: '（......这是哪里？）', chara: 'chrt01' },
         { speaker: '你', text: '（我记得我明明在家里……怎么会到这里？）', chara: 'chrt01' },
@@ -458,17 +516,15 @@
     },
     {
       bg: 'bg001room.png',
-      bgm: 'bgm002.mp3',   // ← 第二幕切换到另一首 BGM
+      bgm: 'bgm002.mp3',
       summary: '门突然打开，一个陌生人出现在门口。他告诉你，外面爆发了灾难，而你手中握有唯一的解药配方。你必须决定是否交出配方。',
       dialogues: [
         { speaker: '旁白', text: '就在你沉思之际，门锁发出了"咔哒"一声。', chara: null },
-        // 句级切换示例：这一句把 BGM 换成紧张版；不写 bgm 的句子会继续沿用
         { speaker: '陌生人', text: '你醒了。', chara: 'chrt02', bgm: 'bgm003.mp3' },
         { speaker: '陌生人', text: '听着，我没时间解释太多。外面的世界已经乱了，病毒在蔓延。', chara: 'chrt02' },
         { speaker: '陌生人', text: '而你——你的血液里，有唯一的抗体。', chara: 'chrt02' },
         { speaker: '你', text: '……你在说什么？', chara: 'chrt01' },
         { speaker: '陌生人', text: '我需要你的配合。跟我走，或者留在这里等死。', chara: 'chrt02' },
-        // 最后一句停止 BGM（旁白收尾时静音，更有余韵）
         { speaker: '旁白', text: '他伸出了手，眼神里既有焦急，也有一丝你看不透的东西。', chara: null, bgm: null },
       ]
     },
@@ -477,23 +533,22 @@
   // ==================== 状态 ====================
   let sceneIndex = 0;
   let dialogueIndex = 0;
-  let speed = 1;               // 1 = NO（手动），2/3/4 = 倍速自动
-  let isTyping = false;        // 打字机是否正在进行
-  let typeTimer = null;        // 打字机定时器
-  let autoTimer = null;        // 自动推进定时器
-  let fullText = '';           // 当前对话的完整文本
-  let displayedText = '';      // 已显示的文本
-  let charIndex = 0;           // 当前字符位置
-  let isTransitioning = false; // 是否正在切换场景（防止重复触发）
-  let skipModalVisible = false;// 跳过弹窗是否可见
-  let hasStarted = false;      // 是否已经开始游戏（用于首次交互锁定屏幕方向）
+  let speed = 1;
+  let isTyping = false;
+  let typeTimer = null;
+  let autoTimer = null;
+  let fullText = '';
+  let displayedText = '';
+  let charIndex = 0;
+  let isTransitioning = false;
+  let skipModalVisible = false;
+  let hasStarted = false;
 
-  // ==================== DOM 引用 ====================
+  // ==================== DOM ====================
   const $game = document.getElementById('game');
   const $bgLayer = document.getElementById('bg-layer');
   const $speakerName = document.getElementById('speaker-name');
   const $dialogueText = document.getElementById('dialogue-text');
-  const $dialogueBox = document.getElementById('dialogue-box');
   const $continueHint = document.getElementById('continue-hint');
   const $skipBtn = document.getElementById('skip-btn');
   const $skipModalOverlay = document.getElementById('skip-modal-overlay');
@@ -502,24 +557,11 @@
   const $charaLeft = document.getElementById('chara-left');
   const $charaRight = document.getElementById('chara-right');
 
-  // ==================== 工具函数 ====================
+  // ==================== 工具 ====================
+  function getBgUrl(filename) { return CONFIG.imageBase + '/' + filename; }
+  function getCharaUrl(name) { return CONFIG.imageBase + '/' + name + '.png'; }
+  function getAudioUrl(filename) { return CONFIG.audioBase + '/' + filename; }
 
-  /** 获取背景图片完整 URL */
-  function getBgUrl(filename) {
-    return CONFIG.imageBase + '/' + filename;
-  }
-
-  /** 获取角色图片完整 URL */
-  function getCharaUrl(name) {
-    return CONFIG.imageBase + '/' + name + '.png';
-  }
-
-  /** 获取音频完整 URL */
-  function getAudioUrl(filename) {
-    return CONFIG.audioBase + '/' + filename;
-  }
-
-  /** 设置背景（带淡入效果） */
   function setBackground(filename) {
     const url = getBgUrl(filename);
     const img = new Image();
@@ -535,44 +577,23 @@
     img.src = url;
   }
 
-  /** 清理打字机定时器 */
   function clearTypingTimer() {
-    if (typeTimer) {
-      clearInterval(typeTimer);
-      typeTimer = null;
-    }
+    if (typeTimer) { clearInterval(typeTimer); typeTimer = null; }
     isTyping = false;
   }
 
-  /** 清理自动推进定时器 */
   function clearAutoTimer() {
-    if (autoTimer) {
-      clearTimeout(autoTimer);
-      autoTimer = null;
-    }
+    if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
   }
 
-  /** 获取当前打字速度（毫秒/字符），受倍速影响 */
-  function getTypeSpeed() {
-    return CONFIG.baseTypeSpeed / speed;
-  }
+  function getTypeSpeed() { return CONFIG.baseTypeSpeed / speed; }
+  function getAutoDelay() { return CONFIG.baseAutoDelay / speed; }
 
-  /** 获取当前自动推进等待时间（毫秒），受倍速影响 */
-  function getAutoDelay() {
-    return CONFIG.baseAutoDelay / speed;
-  }
+  // ==================== BGM ====================
+  let currentBgm = null;
+  let pendingBgmName = '';
+  let bgmUnlocked = false;
 
-  // ==================== BGM 管理 ====================
-  // 说明：
-  //   浏览器（尤其是 iOS Safari / 微信）禁止"无用户交互自动播放音频"。
-  //   因此第一次点击前只记录目标 BGM，等用户首次触摸/按键时才真正播放。
-  //   切换 BGM 时旧曲淡出、新曲淡入，避免突兀。
-
-  let currentBgm = null;       // { audio, name } 当前正在播放的 BGM
-  let pendingBgmName = '';     // 尚未解锁音频时，暂存的目标 BGM
-  let bgmUnlocked = false;     // 是否已通过用户交互解锁音频播放
-
-  /** 通用音量渐变（从 fromVol 渐变到 toVol） */
   function fadeAudio(audio, fromVol, toVol, duration, onDone) {
     if (!audio) { if (onDone) onDone(); return; }
     const steps = Math.max(1, Math.round(duration / 50));
@@ -594,27 +615,14 @@
     }, stepTime);
   }
 
-  /**
-   * 切换 BGM
-   * @param {string|null} filename  BGM 文件名；'' 或 null 表示停止
-   * @param {number} [fadeDuration] 淡入淡出时长（毫秒），默认使用 CONFIG.bgmFadeDuration
-   */
   function switchBgm(filename, fadeDuration) {
     const fade = (typeof fadeDuration === 'number') ? fadeDuration : CONFIG.bgmFadeDuration;
     const target = filename || '';
 
-    // 尚未解锁：只记录目标，等首次用户交互时再播
-    if (!bgmUnlocked) {
-      pendingBgmName = target;
-      return;
-    }
-
-    // 同名则忽略，避免重复加载
+    if (!bgmUnlocked) { pendingBgmName = target; return; }
     if (currentBgm && currentBgm.name === target) return;
-    // 当前无 BGM 且目标也是空，无需操作
     if (!currentBgm && !target) return;
 
-    // 淡出旧 BGM
     if (currentBgm) {
       const oldAudio = currentBgm.audio;
       currentBgm = null;
@@ -625,7 +633,6 @@
 
     if (!target) return;
 
-    // 创建新 BGM
     const audio = new Audio();
     audio.loop = true;
     audio.preload = 'auto';
@@ -646,7 +653,6 @@
     }
   }
 
-  /** 首次用户交互时解锁音频播放 */
   function unlockBgm() {
     if (bgmUnlocked) return;
     bgmUnlocked = true;
@@ -655,8 +661,7 @@
     if (name) switchBgm(name);
   }
 
-  // ==================== 角色立绘控制 ====================
-
+  // ==================== 角色 ====================
   function applyChara(charaName) {
     const leftLit  = charaName === 'chrt01';
     const rightLit = charaName === 'chrt02';
@@ -701,8 +706,7 @@
     });
   }
 
-  // ==================== 打字机效果 ====================
-
+  // ==================== 打字机 ====================
   function startDialogue() {
     clearTypingTimer();
     clearAutoTimer();
@@ -711,23 +715,15 @@
     if (!scene) return;
 
     const dialogue = scene.dialogues[dialogueIndex];
-    if (!dialogue) {
-      nextScene();
-      return;
-    }
+    if (!dialogue) { nextScene(); return; }
 
-    // 句级 BGM 切换（仅当该句显式声明了 bgm 字段时）
     if (Object.prototype.hasOwnProperty.call(dialogue, 'bgm')) {
       switchBgm(dialogue.bgm);
     }
 
-    // 设置说话者名字
     $speakerName.textContent = dialogue.speaker || '';
-
-    // 更新角色立绘亮暗
     applyChara(dialogue.chara || null);
 
-    // 准备打字机
     fullText = dialogue.text || '……';
     displayedText = '';
     charIndex = 0;
@@ -735,8 +731,8 @@
     $continueHint.style.display = 'none';
 
     isTyping = true;
-
     const speedMs = getTypeSpeed();
+
     typeTimer = setInterval(function() {
       if (charIndex < fullText.length) {
         displayedText += fullText.charAt(charIndex);
@@ -744,7 +740,6 @@
         $dialogueText.textContent = displayedText;
       } else {
         clearTypingTimer();
-        isTyping = false;
         $dialogueText.innerHTML = displayedText + '<span class="cursor"></span>';
         $continueHint.style.display = 'block';
         scheduleAutoAdvance();
@@ -754,13 +749,10 @@
 
   function completeTyping() {
     if (!isTyping) return;
-
     clearTypingTimer();
-
     displayedText = fullText;
     charIndex = fullText.length;
     $dialogueText.innerHTML = displayedText + '<span class="cursor"></span>';
-    isTyping = false;
     $continueHint.style.display = 'block';
     scheduleAutoAdvance();
   }
@@ -779,10 +771,8 @@
 
   function restartTyping() {
     clearTypingTimer();
-
     const remainingText = fullText.substring(charIndex);
     let remainingIndex = 0;
-
     isTyping = true;
     const speedMs = getTypeSpeed();
 
@@ -794,7 +784,6 @@
         $dialogueText.textContent = displayedText;
       } else {
         clearTypingTimer();
-        isTyping = false;
         $dialogueText.innerHTML = displayedText + '<span class="cursor"></span>';
         $continueHint.style.display = 'block';
         scheduleAutoAdvance();
@@ -802,8 +791,7 @@
     }, Math.max(speedMs, 8));
   }
 
-  // ==================== 对话推进 ====================
-
+  // ==================== 推进 ====================
   function handleDialogueClick() {
     if (skipModalVisible) return;
     if (isTransitioning) return;
@@ -815,10 +803,7 @@
       tryLockLandscape();
     }
 
-    if (isTyping) {
-      completeTyping();
-      return;
-    }
+    if (isTyping) { completeTyping(); return; }
 
     const scene = story[sceneIndex];
     if (!scene) return;
@@ -832,29 +817,24 @@
   }
 
   // ==================== 场景切换 ====================
-
   function nextScene() {
     if (isTransitioning) return;
 
     clearAutoTimer();
     clearTypingTimer();
-
     sceneIndex++;
 
     if (sceneIndex >= story.length) {
-      // 全部剧情结束
       $speakerName.textContent = '';
       $dialogueText.innerHTML = '— 全剧终 —';
       $continueHint.style.display = 'none';
       $skipBtn.disabled = true;
-      $skipBtn.style.opacity = '0.4';
-      // 停止 BGM
+      $skipBtn.style.opacity = '0.35';
       switchBgm('');
       return;
     }
 
     isTransitioning = true;
-
     $bgLayer.style.opacity = '0';
 
     setTimeout(function() {
@@ -862,14 +842,11 @@
       setBackground(newScene.bg);
       resetCharacters();
       dialogueIndex = 0;
-
-      // 切换场景 BGM（不写 bgm 则停止当前 BGM）
       switchBgm(newScene.bgm || '');
 
       $speakerName.textContent = '';
       $dialogueText.innerHTML = '';
       $continueHint.style.display = 'none';
-
       $bgLayer.style.opacity = '1';
 
       setTimeout(function() {
@@ -879,8 +856,7 @@
     }, CONFIG.fadeDuration);
   }
 
-  // ==================== 跳过功能 ====================
-
+  // ==================== 跳过 ====================
   function showSkipModal() {
     if (isTransitioning) return;
     if (skipModalVisible) return;
@@ -889,49 +865,36 @@
     if (!scene) return;
 
     $skipSummary.textContent = scene.summary || '（暂无简略剧情）';
-
     $skipModalOverlay.classList.add('show');
     skipModalVisible = true;
-
     clearTypingTimer();
     clearAutoTimer();
   }
 
   function hideSkipModalAndAdvance() {
     if (!skipModalVisible) return;
-
     $skipModalOverlay.classList.remove('show');
     skipModalVisible = false;
-
     nextScene();
   }
 
-  // ==================== 倍速控制 ====================
-
+  // ==================== 倍速 ====================
   function setSpeed(newSpeed) {
     speed = newSpeed;
-
     $speedBtns.forEach(function(btn) {
-      const s = parseInt(btn.dataset.speed, 10);
-      btn.classList.toggle('active', s === newSpeed);
+      btn.classList.toggle('active', parseInt(btn.dataset.speed, 10) === newSpeed);
     });
 
-    if (isTyping) {
-      restartTyping();
-      return;
-    }
+    if (isTyping) { restartTyping(); return; }
 
     if (speed < 2) {
       clearAutoTimer();
     } else {
-      if ($continueHint.style.display === 'block') {
-        scheduleAutoAdvance();
-      }
+      if ($continueHint.style.display === 'block') scheduleAutoAdvance();
     }
   }
 
-  // ==================== 屏幕方向锁定 ====================
-
+  // ==================== 横屏锁定 ====================
   function tryLockLandscape() {
     if (screen.orientation && screen.orientation.lock) {
       screen.orientation.lock('landscape').catch(function(err) {
@@ -941,25 +904,18 @@
   }
 
   // ==================== 初始化 ====================
-
   function init() {
     preloadCharas();
-
     if (story.length > 0) {
       setBackground(story[0].bg);
-      // 第一幕的 BGM（未解锁时先存 pending）
       switchBgm(story[0].bgm || '');
     }
-
     setSpeed(1);
-
     dialogueIndex = 0;
     startDialogue();
   }
 
-  // ==================== 事件绑定 ====================
-
-  // 点击游戏区域推进（顶栏按钮和跳过弹窗除外）
+  // ==================== 事件 ====================
   $game.addEventListener('click', function(e) {
     if (e.target.closest('#top-bar')) return;
     if (e.target.closest('#skip-modal-overlay')) return;
@@ -979,8 +935,7 @@
   $speedBtns.forEach(function(btn) {
     btn.addEventListener('click', function(e) {
       e.stopPropagation();
-      const s = parseInt(btn.dataset.speed, 10);
-      setSpeed(s);
+      setSpeed(parseInt(btn.dataset.speed, 10));
     });
   });
 
@@ -995,13 +950,10 @@
     e.preventDefault();
   }, { passive: false });
 
-  // 首次用户交互（点击/触摸/按键）时解锁音频播放
   document.addEventListener('pointerdown', unlockBgm, { once: true, passive: true });
   document.addEventListener('keydown', unlockBgm, { once: true });
 
-  // 启动游戏
   init();
-
 })();
 </script>
 </body>
