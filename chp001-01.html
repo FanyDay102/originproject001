@@ -4,15 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>剧情游戏</title>
-
-<!-- ============ 字体引入（新增） ============ -->
-<!-- MedievalSharp：中世纪哥特显示体，用于说话者名字 / 英文装饰 -->
-<!-- UnifrakturMaguntia：经典哥特黑体，用于英文标题 -->
-<!-- Cinzel：古典罗马衬线，用于数字和按钮，气质更稳 -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=UnifrakturMaguntia&family=Cinzel:wght@600;700&display=swap" rel="stylesheet">
-
 <style>
   /* ---------- 全局重置 ---------- */
   * {
@@ -27,9 +18,7 @@
     height: 100%;
     overflow: hidden;
     background: #000;
-    /* 全局默认用楷体栈，中文有手写文艺感，英文回落到系统 sans */
-    font-family: 'STKaiti', 'KaiTi', 'Kaiti SC', '楷体',
-                 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     touch-action: manipulation;
     user-select: none;
   }
@@ -59,6 +48,7 @@
     z-index: 0;
   }
 
+  /* 背景占位渐变（图片加载失败时显示） */
   #bg-layer.fallback {
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
   }
@@ -139,9 +129,6 @@
     transition: all 0.2s ease;
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
-    /* 数字用 Cinzel，更古典；NO 也会走这个字体 */
-    font-family: 'Cinzel', 'STKaiti', 'KaiTi', '楷体', serif;
-    letter-spacing: 0.5px;
   }
 
   .speed-btn.active {
@@ -166,8 +153,6 @@
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
     transition: all 0.2s ease;
-    font-family: 'STKaiti', 'KaiTi', 'Kaiti SC', '楷体', serif;
-    letter-spacing: 1px;
   }
 
   #skip-btn:active {
@@ -194,40 +179,23 @@
     cursor: pointer;
   }
 
-  /* 说话者名字：哥特体优先（英文名会显示为哥特体），中文名回落到楷体 */
   #speaker-name {
-    font-family: 'MedievalSharp', 'STKaiti', 'KaiTi', 'Kaiti SC', '楷体', serif;
-    font-size: 17px;
+    font-size: 15px;
     font-weight: 700;
     color: #ffd764;
     margin-bottom: 8px;
-    letter-spacing: 1px;
-    text-shadow: 0 1px 4px rgba(0,0,0,0.6), 0 0 12px rgba(255, 215, 100, 0.15);
-    min-height: 22px;
+    letter-spacing: 0.5px;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+    min-height: 20px;
   }
 
-  /* 对话正文：楷体，有手写文艺感；字号略放大以保可读性 */
   #dialogue-text {
-    font-family: 'STKaiti', 'KaiTi', 'Kaiti SC', '楷体',
-                 'Noto Serif SC', 'Songti SC', 'SimSun', serif;
-    font-size: 18px;
-    line-height: 1.75;
+    font-size: 17px;
+    line-height: 1.65;
     color: #f0f0f0;
     text-shadow: 0 1px 6px rgba(0,0,0,0.8);
     word-break: break-word;
-    letter-spacing: 0.4px;
-    min-height: 1.75em;
-  }
-
-  /* 「全剧终」专用样式：行楷 + 金色 + 宽字距，有仪式感 */
-  .ending-text {
-    display: inline-block;
-    font-family: 'STXingkai', 'Xingkai SC', '华文行楷', 'STKaiti', 'KaiTi', '楷体', serif;
-    font-size: 26px;
-    color: #ffd764;
-    letter-spacing: 8px;
-    text-shadow: 0 0 18px rgba(255, 215, 100, 0.45), 0 2px 8px rgba(0, 0, 0, 0.8);
-    padding: 4px 0;
+    min-height: 1.65em;
   }
 
   /* 打字机光标 */
@@ -255,8 +223,6 @@
     color: rgba(255, 255, 255, 0.55);
     animation: float 1.6s ease-in-out infinite;
     display: none;
-    font-family: 'STKaiti', 'KaiTi', '楷体', serif;
-    letter-spacing: 1px;
   }
 
   @keyframes float {
@@ -302,34 +268,26 @@
     to   { opacity: 1; transform: scale(1) translateY(0); }
   }
 
-  /* 弹窗标题：楷体加粗，金色，字距拉开 */
   #skip-modal h3 {
-    font-family: 'STKaiti', 'KaiTi', 'Kaiti SC', '楷体', serif;
-    font-size: 18px;
+    font-size: 16px;
     color: #ffd764;
     margin-bottom: 14px;
     font-weight: 700;
-    letter-spacing: 2px;
-    text-align: center;
+    letter-spacing: 0.5px;
   }
 
-  /* 弹窗正文：楷体，行距放宽 */
   #skip-modal p {
-    font-family: 'STKaiti', 'KaiTi', 'Kaiti SC', '楷体', serif;
-    font-size: 16px;
-    line-height: 1.85;
+    font-size: 15px;
+    line-height: 1.7;
     color: #d0d0d8;
     margin-bottom: 18px;
-    letter-spacing: 0.3px;
   }
 
   #skip-modal .modal-hint {
-    font-family: 'STKaiti', 'KaiTi', '楷体', serif;
     font-size: 12px;
     color: rgba(255, 255, 255, 0.4);
     text-align: center;
     margin-bottom: 0;
-    letter-spacing: 1px;
     animation: float 1.6s ease-in-out infinite;
   }
 
@@ -363,13 +321,12 @@
   }
 
   #rotate-overlay p {
-    font-family: 'STKaiti', 'KaiTi', '楷体', serif;
     font-size: 16px;
     color: #aaa;
     line-height: 1.6;
-    letter-spacing: 1px;
   }
 
+  /* 竖屏时显示提示 */
   @media (orientation: portrait) {
     #rotate-overlay {
       display: flex;
@@ -434,26 +391,63 @@
 (function() {
   'use strict';
 
+  // ==================== 配置 ====================
   const CONFIG = {
+    // 图片 CDN 基础路径（使用 jsDelivr 加速 GitHub 仓库）
+    // ⚠️ 请核对仓库名拼写：origincharacter001 / originccharacter001
     imageBase: 'https://cdn.jsdelivr.net/gh/FanyDay102/originccharacter001@main',
+
+    // 音频 CDN 基础路径
+    // 如果 BGM 和图片放在同一个仓库同一目录，保持与 imageBase 一致即可
+    // 也可以改成别的 CDN / 仓库路径
     audioBase: 'https://cdn.jsdelivr.net/gh/FanyDay102/originccharacter001@main',
+
+    // 打字机基础速度：每个字符的毫秒数（NO 模式下）
+    // 在 x2/x3/x4 模式下，实际速度 = baseTypeSpeed / 倍速
     baseTypeSpeed: 45,
+
+    // 自动推进基础等待时间：x2 倍速下打字完成后等待多久自动进入下一句
+    // 实际等待时间 = baseAutoDelay / 当前倍速
+    // x2: 2200ms  x3: 1466ms  x4: 1100ms
+    // NO 模式不会自动推进，用户必须手动点击
     baseAutoDelay: 4400,
+
+    // 每一幕之间的淡入淡出时间（毫秒）
     fadeDuration: 400,
+
+    // ---------- BGM 配置 ----------
+    // BGM 音量（0 ~ 1），0.4 左右比较适合作为背景音乐
     bgmVolume: 0.4,
+    // BGM 切换时的淡入/淡出时长（毫秒）
     bgmFadeDuration: 800,
   };
 
+  // ==================== 剧情数据 ====================
+  // 每一幕 (scene) 包含:
+  //   bg        - 背景图片文件名
+  //   bgm       - （可选）进入该幕时播放的 BGM 文件名；不写则停止当前 BGM
+  //               想让 BGM 跨幕延续，就在新幕里重复写同一个文件名即可
+  //   summary   - 跳过弹窗显示的简略剧情
+  //   dialogues - 对话数组，每句 { speaker, text, chara, bgm? }
+  //
+  // 每句对话的 chara 字段：
+  //   'chrt01' → 左边角色（chrt01.png）高亮，右边变暗
+  //   'chrt02' → 右边角色（chrt02.png）高亮，左边变暗
+  //   null     → 旁白/主角独白，两边角色都变暗
+  //
+  // 每句对话的 bgm 字段（可选，句级切换）：
+  //   不写      → 保持当前 BGM 不变
+  //   'xxx.mp3' → 切换到指定 BGM
+  //   '' 或 null → 停止当前 BGM
   const story = [
     {
       bg: 'bg001room.png',
-      bgm: 'bgm001.mp3',
-      summary: '你在一个陌生的房间醒来，空气中弥漫着消毒水的气味。你失去所有记忆，仅仅记得自己的名字。一位自称为你养子的少女协同3位伙伴将你从[塔]的大楼中救出，并一路逃往Ontario。',
+      bgm: 'bgm001.mp3',   // ← 第一幕 BGM
+      summary: '你在一个陌生的房间里醒来，空气中弥漫着消毒水的气味。你发现门被反锁，窗外是灰蒙蒙的天空。桌上的纸条写着："做出你的选择。"',
       dialogues: [
         { speaker: '旁白', text: '你缓缓睁开眼睛，视线逐渐聚焦。', chara: null },
-        { speaker: '旁白', text: '最先映入眼帘的是晃眼的白色天花板，以及置于顶端的LED白灯管。耳边是[滴滴答]作响的仪器，喉管被异物入侵的不适感随之而来。你确信你不是自主呼吸，那些冰冷的空气充满化学工业的气息。', chara: null },
-        { speaker: '旁白', text: '可无论如何，你什么都做不了，哪怕只是晃动眼球都撕扯地眼部剧痛......', chara: 'chrt01' },
-        { speaker: '你', text: '（......这是哪里？）', chara: 'chrt01' },
+        { speaker: '旁白', text: '这是一个狭小的房间，白色的墙壁上没有任何装饰，只有一扇紧闭的门和一扇被铁栏封住的窗户。', chara: 'chrt01' },
+        { speaker: '你', text: '……这是哪里？', chara: 'chrt01' },
         { speaker: '你', text: '（我记得我明明在家里……怎么会到这里？）', chara: 'chrt01' },
         { speaker: '旁白', text: '你试图回忆，但脑海中只有一片模糊的碎片。', chara: null },
         { speaker: '旁白', text: '桌上放着一张泛黄的纸条，上面用红笔写着一行字。', chara: null },
@@ -463,33 +457,37 @@
     },
     {
       bg: 'bg001room.png',
-      bgm: 'bgm002.mp3',
+      bgm: 'bgm002.mp3',   // ← 第二幕切换到另一首 BGM
       summary: '门突然打开，一个陌生人出现在门口。他告诉你，外面爆发了灾难，而你手中握有唯一的解药配方。你必须决定是否交出配方。',
       dialogues: [
         { speaker: '旁白', text: '就在你沉思之际，门锁发出了"咔哒"一声。', chara: null },
+        // 句级切换示例：这一句把 BGM 换成紧张版；不写 bgm 的句子会继续沿用
         { speaker: '陌生人', text: '你醒了。', chara: 'chrt02', bgm: 'bgm003.mp3' },
         { speaker: '陌生人', text: '听着，我没时间解释太多。外面的世界已经乱了，病毒在蔓延。', chara: 'chrt02' },
         { speaker: '陌生人', text: '而你——你的血液里，有唯一的抗体。', chara: 'chrt02' },
         { speaker: '你', text: '……你在说什么？', chara: 'chrt01' },
         { speaker: '陌生人', text: '我需要你的配合。跟我走，或者留在这里等死。', chara: 'chrt02' },
+        // 最后一句停止 BGM（旁白收尾时静音，更有余韵）
         { speaker: '旁白', text: '他伸出了手，眼神里既有焦急，也有一丝你看不透的东西。', chara: null, bgm: null },
       ]
     },
   ];
 
+  // ==================== 状态 ====================
   let sceneIndex = 0;
   let dialogueIndex = 0;
-  let speed = 1;
-  let isTyping = false;
-  let typeTimer = null;
-  let autoTimer = null;
-  let fullText = '';
-  let displayedText = '';
-  let charIndex = 0;
-  let isTransitioning = false;
-  let skipModalVisible = false;
-  let hasStarted = false;
+  let speed = 1;               // 1 = NO（手动），2/3/4 = 倍速自动
+  let isTyping = false;        // 打字机是否正在进行
+  let typeTimer = null;        // 打字机定时器
+  let autoTimer = null;        // 自动推进定时器
+  let fullText = '';           // 当前对话的完整文本
+  let displayedText = '';      // 已显示的文本
+  let charIndex = 0;           // 当前字符位置
+  let isTransitioning = false; // 是否正在切换场景（防止重复触发）
+  let skipModalVisible = false;// 跳过弹窗是否可见
+  let hasStarted = false;      // 是否已经开始游戏（用于首次交互锁定屏幕方向）
 
+  // ==================== DOM 引用 ====================
   const $game = document.getElementById('game');
   const $bgLayer = document.getElementById('bg-layer');
   const $speakerName = document.getElementById('speaker-name');
@@ -503,10 +501,24 @@
   const $charaLeft = document.getElementById('chara-left');
   const $charaRight = document.getElementById('chara-right');
 
-  function getBgUrl(filename) { return CONFIG.imageBase + '/' + filename; }
-  function getCharaUrl(name) { return CONFIG.imageBase + '/' + name + '.png'; }
-  function getAudioUrl(filename) { return CONFIG.audioBase + '/' + filename; }
+  // ==================== 工具函数 ====================
 
+  /** 获取背景图片完整 URL */
+  function getBgUrl(filename) {
+    return CONFIG.imageBase + '/' + filename;
+  }
+
+  /** 获取角色图片完整 URL */
+  function getCharaUrl(name) {
+    return CONFIG.imageBase + '/' + name + '.png';
+  }
+
+  /** 获取音频完整 URL */
+  function getAudioUrl(filename) {
+    return CONFIG.audioBase + '/' + filename;
+  }
+
+  /** 设置背景（带淡入效果） */
   function setBackground(filename) {
     const url = getBgUrl(filename);
     const img = new Image();
@@ -522,23 +534,44 @@
     img.src = url;
   }
 
+  /** 清理打字机定时器 */
   function clearTypingTimer() {
-    if (typeTimer) { clearInterval(typeTimer); typeTimer = null; }
+    if (typeTimer) {
+      clearInterval(typeTimer);
+      typeTimer = null;
+    }
     isTyping = false;
   }
 
+  /** 清理自动推进定时器 */
   function clearAutoTimer() {
-    if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
+    if (autoTimer) {
+      clearTimeout(autoTimer);
+      autoTimer = null;
+    }
   }
 
-  function getTypeSpeed() { return CONFIG.baseTypeSpeed / speed; }
-  function getAutoDelay() { return CONFIG.baseAutoDelay / speed; }
+  /** 获取当前打字速度（毫秒/字符），受倍速影响 */
+  function getTypeSpeed() {
+    return CONFIG.baseTypeSpeed / speed;
+  }
 
-  // ---------- BGM ----------
-  let currentBgm = null;
-  let pendingBgmName = '';
-  let bgmUnlocked = false;
+  /** 获取当前自动推进等待时间（毫秒），受倍速影响 */
+  function getAutoDelay() {
+    return CONFIG.baseAutoDelay / speed;
+  }
 
+  // ==================== BGM 管理 ====================
+  // 说明：
+  //   浏览器（尤其是 iOS Safari / 微信）禁止"无用户交互自动播放音频"。
+  //   因此第一次点击前只记录目标 BGM，等用户首次触摸/按键时才真正播放。
+  //   切换 BGM 时旧曲淡出、新曲淡入，避免突兀。
+
+  let currentBgm = null;       // { audio, name } 当前正在播放的 BGM
+  let pendingBgmName = '';     // 尚未解锁音频时，暂存的目标 BGM
+  let bgmUnlocked = false;     // 是否已通过用户交互解锁音频播放
+
+  /** 通用音量渐变（从 fromVol 渐变到 toVol） */
   function fadeAudio(audio, fromVol, toVol, duration, onDone) {
     if (!audio) { if (onDone) onDone(); return; }
     const steps = Math.max(1, Math.round(duration / 50));
@@ -560,13 +593,27 @@
     }, stepTime);
   }
 
+  /**
+   * 切换 BGM
+   * @param {string|null} filename  BGM 文件名；'' 或 null 表示停止
+   * @param {number} [fadeDuration] 淡入淡出时长（毫秒），默认使用 CONFIG.bgmFadeDuration
+   */
   function switchBgm(filename, fadeDuration) {
     const fade = (typeof fadeDuration === 'number') ? fadeDuration : CONFIG.bgmFadeDuration;
     const target = filename || '';
-    if (!bgmUnlocked) { pendingBgmName = target; return; }
+
+    // 尚未解锁：只记录目标，等首次用户交互时再播
+    if (!bgmUnlocked) {
+      pendingBgmName = target;
+      return;
+    }
+
+    // 同名则忽略，避免重复加载
     if (currentBgm && currentBgm.name === target) return;
+    // 当前无 BGM 且目标也是空，无需操作
     if (!currentBgm && !target) return;
 
+    // 淡出旧 BGM
     if (currentBgm) {
       const oldAudio = currentBgm.audio;
       currentBgm = null;
@@ -577,11 +624,13 @@
 
     if (!target) return;
 
+    // 创建新 BGM
     const audio = new Audio();
     audio.loop = true;
     audio.preload = 'auto';
     audio.src = getAudioUrl(target);
     audio.volume = 0;
+
     currentBgm = { audio: audio, name: target };
 
     const playPromise = audio.play();
@@ -596,6 +645,7 @@
     }
   }
 
+  /** 首次用户交互时解锁音频播放 */
   function unlockBgm() {
     if (bgmUnlocked) return;
     bgmUnlocked = true;
@@ -604,7 +654,8 @@
     if (name) switchBgm(name);
   }
 
-  // ---------- 角色立绘 ----------
+  // ==================== 角色立绘控制 ====================
+
   function applyChara(charaName) {
     const leftLit  = charaName === 'chrt01';
     const rightLit = charaName === 'chrt02';
@@ -649,7 +700,8 @@
     });
   }
 
-  // ---------- 打字机 ----------
+  // ==================== 打字机效果 ====================
+
   function startDialogue() {
     clearTypingTimer();
     clearAutoTimer();
@@ -658,15 +710,23 @@
     if (!scene) return;
 
     const dialogue = scene.dialogues[dialogueIndex];
-    if (!dialogue) { nextScene(); return; }
+    if (!dialogue) {
+      nextScene();
+      return;
+    }
 
+    // 句级 BGM 切换（仅当该句显式声明了 bgm 字段时）
     if (Object.prototype.hasOwnProperty.call(dialogue, 'bgm')) {
       switchBgm(dialogue.bgm);
     }
 
+    // 设置说话者名字
     $speakerName.textContent = dialogue.speaker || '';
+
+    // 更新角色立绘亮暗
     applyChara(dialogue.chara || null);
 
+    // 准备打字机
     fullText = dialogue.text || '……';
     displayedText = '';
     charIndex = 0;
@@ -674,6 +734,7 @@
     $continueHint.style.display = 'none';
 
     isTyping = true;
+
     const speedMs = getTypeSpeed();
     typeTimer = setInterval(function() {
       if (charIndex < fullText.length) {
@@ -692,7 +753,9 @@
 
   function completeTyping() {
     if (!isTyping) return;
+
     clearTypingTimer();
+
     displayedText = fullText;
     charIndex = fullText.length;
     $dialogueText.innerHTML = displayedText + '<span class="cursor"></span>';
@@ -706,6 +769,7 @@
     if (speed < 2) return;
     if (skipModalVisible) return;
     if (isTransitioning) return;
+
     autoTimer = setTimeout(function() {
       autoTimer = null;
       handleDialogueClick();
@@ -714,10 +778,13 @@
 
   function restartTyping() {
     clearTypingTimer();
+
     const remainingText = fullText.substring(charIndex);
     let remainingIndex = 0;
+
     isTyping = true;
     const speedMs = getTypeSpeed();
+
     typeTimer = setInterval(function() {
       if (remainingIndex < remainingText.length) {
         displayedText += remainingText.charAt(remainingIndex);
@@ -734,10 +801,12 @@
     }, Math.max(speedMs, 8));
   }
 
-  // ---------- 推进 ----------
+  // ==================== 对话推进 ====================
+
   function handleDialogueClick() {
     if (skipModalVisible) return;
     if (isTransitioning) return;
+
     clearAutoTimer();
 
     if (!hasStarted) {
@@ -745,7 +814,10 @@
       tryLockLandscape();
     }
 
-    if (isTyping) { completeTyping(); return; }
+    if (isTyping) {
+      completeTyping();
+      return;
+    }
 
     const scene = story[sceneIndex];
     if (!scene) return;
@@ -758,25 +830,30 @@
     }
   }
 
-  // ---------- 场景切换 ----------
+  // ==================== 场景切换 ====================
+
   function nextScene() {
     if (isTransitioning) return;
+
     clearAutoTimer();
     clearTypingTimer();
+
     sceneIndex++;
 
     if (sceneIndex >= story.length) {
+      // 全部剧情结束
       $speakerName.textContent = '';
-      // 给「全剧终」套一个可独立样式的 span
-      $dialogueText.innerHTML = '<span class="ending-text">— 全 剧 终 —</span>';
+      $dialogueText.innerHTML = '— 全剧终 —';
       $continueHint.style.display = 'none';
       $skipBtn.disabled = true;
       $skipBtn.style.opacity = '0.4';
+      // 停止 BGM
       switchBgm('');
       return;
     }
 
     isTransitioning = true;
+
     $bgLayer.style.opacity = '0';
 
     setTimeout(function() {
@@ -784,11 +861,16 @@
       setBackground(newScene.bg);
       resetCharacters();
       dialogueIndex = 0;
+
+      // 切换场景 BGM（不写 bgm 则停止当前 BGM）
       switchBgm(newScene.bgm || '');
+
       $speakerName.textContent = '';
       $dialogueText.innerHTML = '';
       $continueHint.style.display = 'none';
+
       $bgLayer.style.opacity = '1';
+
       setTimeout(function() {
         isTransitioning = false;
         startDialogue();
@@ -796,42 +878,59 @@
     }, CONFIG.fadeDuration);
   }
 
-  // ---------- 跳过 ----------
+  // ==================== 跳过功能 ====================
+
   function showSkipModal() {
     if (isTransitioning) return;
     if (skipModalVisible) return;
+
     const scene = story[sceneIndex];
     if (!scene) return;
+
     $skipSummary.textContent = scene.summary || '（暂无简略剧情）';
+
     $skipModalOverlay.classList.add('show');
     skipModalVisible = true;
+
     clearTypingTimer();
     clearAutoTimer();
   }
 
   function hideSkipModalAndAdvance() {
     if (!skipModalVisible) return;
+
     $skipModalOverlay.classList.remove('show');
     skipModalVisible = false;
+
     nextScene();
   }
 
-  // ---------- 倍速 ----------
+  // ==================== 倍速控制 ====================
+
   function setSpeed(newSpeed) {
     speed = newSpeed;
+
     $speedBtns.forEach(function(btn) {
       const s = parseInt(btn.dataset.speed, 10);
       btn.classList.toggle('active', s === newSpeed);
     });
-    if (isTyping) { restartTyping(); return; }
+
+    if (isTyping) {
+      restartTyping();
+      return;
+    }
+
     if (speed < 2) {
       clearAutoTimer();
     } else {
-      if ($continueHint.style.display === 'block') scheduleAutoAdvance();
+      if ($continueHint.style.display === 'block') {
+        scheduleAutoAdvance();
+      }
     }
   }
 
-  // ---------- 屏幕方向 ----------
+  // ==================== 屏幕方向锁定 ====================
+
   function tryLockLandscape() {
     if (screen.orientation && screen.orientation.lock) {
       screen.orientation.lock('landscape').catch(function(err) {
@@ -840,19 +939,26 @@
     }
   }
 
-  // ---------- 初始化 ----------
+  // ==================== 初始化 ====================
+
   function init() {
     preloadCharas();
+
     if (story.length > 0) {
       setBackground(story[0].bg);
+      // 第一幕的 BGM（未解锁时先存 pending）
       switchBgm(story[0].bgm || '');
     }
+
     setSpeed(1);
+
     dialogueIndex = 0;
     startDialogue();
   }
 
-  // ---------- 事件 ----------
+  // ==================== 事件绑定 ====================
+
+  // 点击游戏区域推进（顶栏按钮和跳过弹窗除外）
   $game.addEventListener('click', function(e) {
     if (e.target.closest('#top-bar')) return;
     if (e.target.closest('#skip-modal-overlay')) return;
@@ -888,10 +994,13 @@
     e.preventDefault();
   }, { passive: false });
 
+  // 首次用户交互（点击/触摸/按键）时解锁音频播放
   document.addEventListener('pointerdown', unlockBgm, { once: true, passive: true });
   document.addEventListener('keydown', unlockBgm, { once: true });
 
+  // 启动游戏
   init();
+
 })();
 </script>
 </body>
