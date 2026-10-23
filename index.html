@@ -1,367 +1,26 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>剧情游戏</title>
-<style>
-  /* ---------- 全局重置 ---------- */
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  html, body {
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    background: #000;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    touch-action: manipulation;
-    user-select: none;
-  }
-
-  /* ---------- 游戏主容器 ---------- */
-  #game {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
-    background: #0a0a0a;
-  }
-
-  /* ---------- 背景层 ---------- */
-  #bg-layer {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    transition: opacity 0.4s ease;
-  }
-
-  /* 背景占位渐变（图片加载失败时显示） */
-  #bg-layer.fallback {
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-  }
-
-  /* ---------- 顶部控制栏 ---------- */
-  #top-bar {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    padding: 12px 16px;
-    padding-top: calc(12px + env(safe-area-inset-top, 0px));
-    z-index: 30;
-    pointer-events: none;
-  }
-
-  #top-bar > * {
-    pointer-events: auto;
-  }
-
-  .speed-group {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
-
-  .speed-btn {
-    background: rgba(0, 0, 0, 0.55);
-    color: #ccc;
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    border-radius: 8px;
-    padding: 6px 12px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-  }
-
-  .speed-btn.active {
-    background: rgba(255, 200, 50, 0.85);
-    color: #111;
-    border-color: rgba(255, 200, 50, 1);
-  }
-
-  .speed-btn:active {
-    transform: scale(0.94);
-  }
-
-  #skip-btn {
-    background: rgba(0, 0, 0, 0.55);
-    color: #fff;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 8px;
-    padding: 6px 16px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    transition: all 0.2s ease;
-  }
-
-  #skip-btn:active {
-    transform: scale(0.94);
-    background: rgba(255, 80, 80, 0.7);
-    border-color: rgba(255, 80, 80, 0.9);
-  }
-
-  /* ---------- 底部对话框 ---------- */
-  #dialogue-box {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    min-height: 160px;
-    max-height: 42vh;
-    background: linear-gradient(180deg, rgba(10, 10, 20, 0.0) 0%, rgba(10, 10, 20, 0.92) 18%, rgba(8, 8, 16, 0.97) 100%);
-    padding: 28px 24px;
-    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    z-index: 20;
-    cursor: pointer;
-  }
-
-  #speaker-name {
-    font-size: 15px;
-    font-weight: 700;
-    color: #ffd764;
-    margin-bottom: 8px;
-    letter-spacing: 0.5px;
-    text-shadow: 0 1px 4px rgba(0,0,0,0.6);
-    min-height: 20px;
-  }
-
-  #dialogue-text {
-    font-size: 17px;
-    line-height: 1.65;
-    color: #f0f0f0;
-    text-shadow: 0 1px 6px rgba(0,0,0,0.8);
-    word-break: break-word;
-    min-height: 1.65em;
-  }
-
-  /* 打字机光标 */
-  .cursor {
-    display: inline-block;
-    width: 2px;
-    height: 1.1em;
-    background: #ffd764;
-    margin-left: 2px;
-    vertical-align: text-bottom;
-    animation: blink 0.8s step-end infinite;
-  }
-
-  @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0; }
-  }
-
-  /* 点击继续提示 */
-  #continue-hint {
-    position: absolute;
-    bottom: 12px;
-    right: 20px;
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.55);
-    animation: float 1.6s ease-in-out infinite;
-    display: none;
-  }
-
-  @keyframes float {
-    0%, 100% { transform: translateY(0); opacity: 0.55; }
-    50% { transform: translateY(-4px); opacity: 1; }
-  }
-
-  /* ---------- 跳过弹窗 ---------- */
-  #skip-modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.78);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 100;
-    padding: 24px;
-  }
-
-  #skip-modal-overlay.show {
-    display: flex;
-  }
-
-  #skip-modal {
-    background: linear-gradient(160deg, #1e1e2e 0%, #14141f 100%);
-    border: 1px solid rgba(255, 215, 100, 0.25);
-    border-radius: 16px;
-    padding: 28px 24px;
-    max-width: 520px;
-    width: 100%;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
-    animation: modalIn 0.28s ease-out;
-    cursor: pointer;
-  }
-
-  @keyframes modalIn {
-    from { opacity: 0; transform: scale(0.92) translateY(12px); }
-    to   { opacity: 1; transform: scale(1) translateY(0); }
-  }
-
-  #skip-modal h3 {
-    font-size: 16px;
-    color: #ffd764;
-    margin-bottom: 14px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-  }
-
-  #skip-modal p {
-    font-size: 15px;
-    line-height: 1.7;
-    color: #d0d0d8;
-    margin-bottom: 18px;
-  }
-
-  #skip-modal .modal-hint {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.4);
-    text-align: center;
-    margin-bottom: 0;
-    animation: float 1.6s ease-in-out infinite;
-  }
-
-  /* ---------- 竖屏提示覆盖层 ---------- */
-  #rotate-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: #0a0a12;
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 200;
-    color: #fff;
-    text-align: center;
-    padding: 24px;
-  }
-
-  #rotate-overlay .rotate-icon {
-    font-size: 56px;
-    margin-bottom: 20px;
-    animation: rotateHint 2s ease-in-out infinite;
-  }
-
-  @keyframes rotateHint {
-    0%, 100% { transform: rotate(0deg); }
-    50% { transform: rotate(90deg); }
-  }
-
-  #rotate-overlay p {
-    font-size: 16px;
-    color: #aaa;
-    line-height: 1.6;
-  }
-
-  /* 竖屏时显示提示 */
-  @media (orientation: portrait) {
-    #rotate-overlay {
-      display: flex;
-    }
-    #game {
-      /* 竖屏时游戏内容仍然渲染但被覆盖 */
-      visibility: hidden;
-    }
-  }
-</style>
-</head>
-<body>
-
-<!-- 竖屏提示 -->
-<div id="rotate-overlay">
-  <div class="rotate-icon">📱</div>
-  <p>请将手机横屏使用<br>以获得最佳游戏体验</p>
-</div>
-
-<!-- 游戏主容器 -->
-<div id="game">
-  <div id="bg-layer"></div>
-
-  <!-- 顶部控制栏 -->
-  <div id="top-bar">
-    <div class="speed-group">
-      <button class="speed-btn" data-speed="1">x1</button>
-      <button class="speed-btn active" data-speed="2">x2</button>
-      <button class="speed-btn" data-speed="3">x3</button>
-      <button class="speed-btn" data-speed="4">x4</button>
-    </div>
-    <button id="skip-btn">跳过 ▶▶</button>
-  </div>
-
-  <!-- 底部对话框 -->
-  <div id="dialogue-box">
-    <div id="speaker-name"></div>
-    <div id="dialogue-text"></div>
-    <div id="continue-hint">点击继续 ▼</div>
-  </div>
-
-  <!-- 跳过弹窗 -->
-  <div id="skip-modal-overlay">
-    <div id="skip-modal">
-      <h3>📖 剧情简略</h3>
-      <p id="skip-summary"></p>
-      <p class="modal-hint">点击任意位置继续下一幕</p>
-    </div>
-  </div>
-</div>
-
 <script>
 (function() {
   'use strict';
 
   // ==================== 配置 ====================
   const CONFIG = {
-    // 图片 CDN 基础路径（使用 jsDelivr 加速 GitHub 仓库）
-    // 格式: https://cdn.jsdelivr.net/gh/用户名/仓库名@分支名/文件路径
-    // 如果你的默认分支是 master，请把 main 改为 master
+    // 图片 CDN 基础路径
     imageBase: 'https://cdn.jsdelivr.net/gh/FanyDay102/origincharacter001@main',
-    
+
     // 打字机基础速度：每个字符的毫秒数（x1 时）
     baseTypeSpeed: 45,
-    
+
     // 每一幕之间的淡入淡出时间（毫秒）
     fadeDuration: 400,
   };
 
+  // 倍速对应的「自动推进」延迟（毫秒）
+  // x1 = 0 表示不自动；x2/x3/x4 表示每句打字完成后，
+  // 等待对应毫秒数，然后自动进入下一句。
+  // 想让自动播放更快就调小，更慢就调大。
+  const AUTO_ADVANCE_DELAY = { 1: 0, 2: 1000, 3: 650, 4: 400 };
+
   // ==================== 剧情数据 ====================
-  // 每一幕 (scene) 包含:
-  //   bg      - 背景图片文件名（会拼接 CONFIG.imageBase）
-  //   summary - 点击"跳过"时弹窗显示的简略剧情
-  //   dialogues - 对话数组，每个元素 { speaker, text }
-  //               点击对话框时按顺序推进；全部对话结束后进入下一幕
   const story = [
     {
       bg: 'bg001room.png',
@@ -395,15 +54,16 @@
   // ==================== 状态 ====================
   let sceneIndex = 0;
   let dialogueIndex = 0;
-  let speed = 1;               // 当前倍速（1, 2, 3, 4）
-  let isTyping = false;        // 打字机是否正在进行
+  let speed = 1;
+  let isTyping = false;
   let typeTimer = null;        // 打字机定时器
-  let fullText = '';           // 当前对话的完整文本
-  let displayedText = '';      // 已显示的文本
-  let charIndex = 0;           // 当前字符位置
-  let isTransitioning = false; // 是否正在切换场景（防止重复触发）
-  let skipModalVisible = false;// 跳过弹窗是否可见
-  let hasStarted = false;      // 是否已经开始游戏（用于首次交互锁定屏幕方向）
+  let autoTimer = null;        // 自动推进定时器（新）
+  let fullText = '';
+  let displayedText = '';
+  let charIndex = 0;
+  let isTransitioning = false;
+  let skipModalVisible = false;
+  let hasStarted = false;
 
   // ==================== DOM 引用 ====================
   const $bgLayer = document.getElementById('bg-layer');
@@ -417,23 +77,18 @@
   const $speedBtns = document.querySelectorAll('.speed-btn');
 
   // ==================== 工具函数 ====================
-
-  /** 获取背景图片完整 URL */
   function getBgUrl(filename) {
     return CONFIG.imageBase + '/' + filename;
   }
 
-  /** 设置背景（带淡入效果） */
   function setBackground(filename) {
     const url = getBgUrl(filename);
-    // 先创建一个 Image 对象预加载，加载成功后再设置背景
     const img = new Image();
     img.onload = function() {
       $bgLayer.style.backgroundImage = 'url("' + url + '")';
       $bgLayer.classList.remove('fallback');
     };
     img.onerror = function() {
-      // 图片加载失败时使用渐变背景，并给出提示
       console.warn('背景图片加载失败:', url);
       $bgLayer.classList.add('fallback');
       $bgLayer.style.backgroundImage = 'none';
@@ -441,7 +96,6 @@
     img.src = url;
   }
 
-  /** 清理打字机定时器 */
   function clearTypingTimer() {
     if (typeTimer) {
       clearInterval(typeTimer);
@@ -450,44 +104,50 @@
     isTyping = false;
   }
 
-  /** 获取当前打字速度（毫秒/字符），受倍速影响 */
+  function clearAutoTimer() {
+    if (autoTimer) {
+      clearTimeout(autoTimer);
+      autoTimer = null;
+    }
+  }
+
   function getTypeSpeed() {
     return CONFIG.baseTypeSpeed / speed;
   }
 
-  // ==================== 打字机效果 ====================
-
+  // ==================== 自动推进 ====================
   /**
-   * 开始显示当前对话
-   * 如果文本为空，则直接显示"……"占位
+   * 在当前这句「打字完成」之后，安排一次自动推进。
+   * 只在 speed > 1 时生效。
    */
-  function startDialogue() {
+  function scheduleAutoAdvance() {
+    clearAutoTimer();
+
+    if (speed <= 1) return;                    // x1 不自动
+    if (isTyping) return;                      // 还在打字，等打完再说
+    if (skipModalVisible) return;              // 弹窗开着，暂停
+    if (isTransitioning) return;               // 正在切幕
+    if (!fullText) return;                     // 还没开始任何对话
+
+    const delay = AUTO_ADVANCE_DELAY[speed];
+    if (!delay) return;
+
+    autoTimer = setTimeout(function() {
+      autoTimer = null;
+      advanceDialogue();
+    }, delay);
+  }
+
+  // ==================== 打字机 ====================
+  /**
+   * 启动 / 重启打字机（会从当前的 charIndex 继续）。
+   */
+  function startTypingTimer() {
     clearTypingTimer();
-
-    const scene = story[sceneIndex];
-    if (!scene) return;
-
-    const dialogue = scene.dialogues[dialogueIndex];
-    if (!dialogue) {
-      // 当前幕的对话已全部完成，自动进入下一幕
-      nextScene();
-      return;
-    }
-
-    // 设置说话者名字
-    $speakerName.textContent = dialogue.speaker || '';
-
-    // 准备打字机
-    fullText = dialogue.text || '……';
-    displayedText = '';
-    charIndex = 0;
-    $dialogueText.innerHTML = '';
-    $continueHint.style.display = 'none';
-
     isTyping = true;
 
-    // 使用 setInterval 逐字显示
-    const speedMs = getTypeSpeed();
+    const interval = Math.max(getTypeSpeed(), 8); // 最小 8ms 防止过快卡死
+
     typeTimer = setInterval(function() {
       if (charIndex < fullText.length) {
         displayedText += fullText.charAt(charIndex);
@@ -499,73 +159,97 @@
         isTyping = false;
         $dialogueText.innerHTML = displayedText + '<span class="cursor"></span>';
         $continueHint.style.display = 'block';
+        // 关键：打字完成后，若倍速 > 1，则安排自动推进
+        scheduleAutoAdvance();
       }
-    }, Math.max(speedMs, 8)); // 最小间隔 8ms，防止过快卡死
+    }, interval);
   }
 
-  /** 立即完成当前对话的打字（点击时如果正在打字） */
+  function startDialogue() {
+    clearTypingTimer();
+    clearAutoTimer();
+
+    const scene = story[sceneIndex];
+    if (!scene) return;
+
+    const dialogue = scene.dialogues[dialogueIndex];
+    if (!dialogue) {
+      nextScene();
+      return;
+    }
+
+    $speakerName.textContent = dialogue.speaker || '';
+    fullText = dialogue.text || '……';
+    displayedText = '';
+    charIndex = 0;
+    $dialogueText.innerHTML = '';
+    $continueHint.style.display = 'none';
+
+    startTypingTimer();
+  }
+
   function completeTyping() {
     if (!isTyping) return;
 
     clearTypingTimer();
-
-    // 直接显示完整文本
     displayedText = fullText;
     charIndex = fullText.length;
     $dialogueText.innerHTML = displayedText + '<span class="cursor"></span>';
     isTyping = false;
     $continueHint.style.display = 'block';
+
+    // 点一下直接补全后，仍然按倍速自动推进
+    scheduleAutoAdvance();
   }
 
   // ==================== 对话推进 ====================
-
   /**
-   * 处理对话框点击：
-   *   - 如果正在打字 → 立即完成
-   *   - 如果打字已完成 → 推进到下一句对话
-   *   - 如果当前幕对话已结束 → 进入下一幕
+   * 真正推进到下一句 / 下一幕（手动和自动共用）。
    */
+  function advanceDialogue() {
+    if (isTransitioning || skipModalVisible) return;
+
+    const scene = story[sceneIndex];
+    if (!scene) return;
+
+    if (dialogueIndex < scene.dialogues.length - 1) {
+      dialogueIndex++;
+      startDialogue();
+    } else {
+      nextScene();
+    }
+  }
+
   function handleDialogueClick() {
-    // 跳过弹窗打开时，点击对话框不应有响应
     if (skipModalVisible) return;
     if (isTransitioning) return;
 
-    // 首次交互时尝试锁定横屏
     if (!hasStarted) {
       hasStarted = true;
       tryLockLandscape();
     }
 
     if (isTyping) {
-      // 正在打字 → 立即完成
+      // 正在打字 → 立即补全（补全后仍会按倍速自动推进）
       completeTyping();
       return;
     }
 
-    // 打字已完成 → 推进
-    const scene = story[sceneIndex];
-    if (!scene) return;
-
-    if (dialogueIndex < scene.dialogues.length - 1) {
-      // 还有下一句
-      dialogueIndex++;
-      startDialogue();
-    } else {
-      // 当前幕对话已结束 → 进入下一幕
-      nextScene();
-    }
+    // 已打完字 → 玩家手动推进，取消自动计时
+    clearAutoTimer();
+    advanceDialogue();
   }
 
   // ==================== 场景切换 ====================
-
-  /** 进入下一幕 */
   function nextScene() {
     if (isTransitioning) return;
+
+    clearAutoTimer();
+    clearTypingTimer();
 
     sceneIndex++;
 
     if (sceneIndex >= story.length) {
-      // 全部剧情结束
       $speakerName.textContent = '';
       $dialogueText.innerHTML = '— 全剧终 —';
       $continueHint.style.display = 'none';
@@ -575,22 +259,17 @@
     }
 
     isTransitioning = true;
-
-    // 淡出
     $bgLayer.style.opacity = '0';
 
     setTimeout(function() {
-      // 加载新场景
       const newScene = story[sceneIndex];
       setBackground(newScene.bg);
       dialogueIndex = 0;
 
-      // 清空对话框并开始新对话
       $speakerName.textContent = '';
       $dialogueText.innerHTML = '';
       $continueHint.style.display = 'none';
 
-      // 淡入
       $bgLayer.style.opacity = '1';
 
       setTimeout(function() {
@@ -601,8 +280,6 @@
   }
 
   // ==================== 跳过功能 ====================
-
-  /** 显示跳过弹窗 */
   function showSkipModal() {
     if (isTransitioning) return;
     if (skipModalVisible) return;
@@ -610,128 +287,88 @@
     const scene = story[sceneIndex];
     if (!scene) return;
 
-    // 如果没有摘要，显示默认文本
     $skipSummary.textContent = scene.summary || '（暂无简略剧情）';
-
     $skipModalOverlay.classList.add('show');
     skipModalVisible = true;
 
-    // 暂停当前打字（如果有）
-    if (isTyping) {
-      clearTypingTimer();
-    }
+    // 打开弹窗时暂停打字和自动推进
+    clearTypingTimer();
+    clearAutoTimer();
   }
 
-  /** 隐藏跳过弹窗，并进入下一幕 */
   function hideSkipModalAndAdvance() {
     if (!skipModalVisible) return;
 
     $skipModalOverlay.classList.remove('show');
     skipModalVisible = false;
 
-    // 跳过当前幕，直接进入下一幕
     nextScene();
   }
 
   // ==================== 倍速控制 ====================
-
-  /** 设置倍速 */
   function setSpeed(newSpeed) {
     speed = newSpeed;
 
-    // 更新按钮激活状态
     $speedBtns.forEach(function(btn) {
       const s = parseInt(btn.dataset.speed, 10);
-      if (s === newSpeed) {
-        btn.classList.add('active');
-      } else {
-        btn.classList.remove('active');
-      }
+      btn.classList.toggle('active', s === newSpeed);
     });
 
-    // 如果正在打字，调整打字速度
+    // 先清掉旧的自动计时，避免用了旧倍速的延迟
+    clearAutoTimer();
+
     if (isTyping) {
-      // 重新启动打字机，保留当前进度
-      clearTypingTimer();
-
-      const remainingText = fullText.substring(charIndex);
-      let remainingIndex = 0;
-
-      isTyping = true;
-      const speedMs = getTypeSpeed();
-
-      typeTimer = setInterval(function() {
-        if (remainingIndex < remainingText.length) {
-          displayedText += remainingText.charAt(remainingIndex);
-          remainingIndex++;
-          charIndex++;
-          $dialogueText.textContent = displayedText;
-        } else {
-          clearTypingTimer();
-          isTyping = false;
-          $dialogueText.innerHTML = displayedText + '<span class="cursor"></span>';
-          $continueHint.style.display = 'block';
-        }
-      }, Math.max(speedMs, 8));
+      // 正在打字：用新速度继续
+      startTypingTimer();
+    } else {
+      // 已经打完字、正停在等待阶段：按新倍速重新计时
+      // （如果 newSpeed === 1，scheduleAutoAdvance 会直接 return，等于停掉自动）
+      scheduleAutoAdvance();
     }
   }
 
   // ==================== 屏幕方向锁定 ====================
-
-  /** 尝试锁定横屏（需要在用户手势中调用） */
   function tryLockLandscape() {
     if (screen.orientation && screen.orientation.lock) {
       screen.orientation.lock('landscape').catch(function(err) {
-        // 锁定失败（常见于桌面浏览器或权限不足），静默忽略
         console.log('屏幕方向锁定失败（可忽略）:', err.message);
       });
     }
   }
 
   // ==================== 初始化 ====================
-
   function init() {
-    // 加载第一幕背景
+    // 先设置倍速，再开始第一句
+    setSpeed(2);
+
     if (story.length > 0) {
       setBackground(story[0].bg);
     }
 
-    // 显示第一句对话
     dialogueIndex = 0;
     startDialogue();
-
-    // 设置默认倍速为 x2
-    setSpeed(2);
   }
 
   // ==================== 事件绑定 ====================
-
-  // 对话框点击
   $dialogueBox.addEventListener('click', handleDialogueClick);
 
-  // 跳过按钮
   $skipBtn.addEventListener('click', function(e) {
     e.stopPropagation();
     showSkipModal();
   });
 
-  // 跳过弹窗点击（点击任意位置继续）
   $skipModalOverlay.addEventListener('click', function(e) {
-    // 如果点击的是弹窗内部，也可以继续（整个覆盖层都可点击）
     e.stopPropagation();
     hideSkipModalAndAdvance();
   });
 
-  // 倍速按钮
   $speedBtns.forEach(function(btn) {
     btn.addEventListener('click', function(e) {
       e.stopPropagation();
-      const s = parseInt(btn.dataset.speed, 10);
-      setSpeed(s);
+      setSpeed(parseInt(btn.dataset.speed, 10));
     });
   });
 
-  // 键盘支持（方便桌面调试）
   document.addEventListener('keydown', function(e) {
     if (e.key === ' ' || e.key === 'Enter') {
       e.preventDefault();
@@ -739,7 +376,6 @@
     }
   });
 
-  // 阻止触摸时页面滚动
   document.addEventListener('touchmove', function(e) {
     e.preventDefault();
   }, { passive: false });
@@ -749,5 +385,3 @@
 
 })();
 </script>
-</body>
-</html>
