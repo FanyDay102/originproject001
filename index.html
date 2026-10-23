@@ -1,560 +1,897 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Golden Theatre</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>剧情游戏</title>
+
+<!-- ============ 字体引入（新增） ============ -->
+<!-- MedievalSharp：中世纪哥特显示体，用于说话者名字 / 英文装饰 -->
+<!-- UnifrakturMaguntia：经典哥特黑体，用于英文标题 -->
+<!-- Cinzel：古典罗马衬线，用于数字和按钮，气质更稳 -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=UnifrakturMaguntia&family=Cinzel:wght@600;700&display=swap" rel="stylesheet">
+
 <style>
-  :root{
-    --gold:      #c9a86a;
-    --gold-lit:  #e0c68f;
-    --ink:       #e9e3d5;
+  /* ---------- 全局重置 ---------- */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
   }
 
-  *{ margin:0; padding:0; box-sizing:border-box; }
-
-  html, body{ height:100%; }
-
-  body{
-    min-height:100dvh;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding: 48px 0;
-    overflow-x:hidden;
-    overflow-y:auto;
-    background:
-      radial-gradient(ellipse at 50% 0%, #15121b 0%, #0a0a0f 55%, #050508 100%);
-    color: var(--ink);
-    font-family: "Noto Serif SC", "Songti SC", STSong, "SimSun", serif;
-    -webkit-font-smoothing: antialiased;
-  }
-
-  /* ---------- 背景氛围 ---------- */
-  #dust{
-    position: fixed; inset: 0;
-    z-index: 0;
-    pointer-events: none;
-  }
-
-  .glow{
-    position: fixed;
-    border-radius: 50%;
-    filter: blur(70px);
-    pointer-events: none;
-    z-index: 0;
-  }
-  .g1{
-    width:70vmax; height:70vmax; left:-25vmax; top:-30vmax;
-    background: radial-gradient(circle, rgba(46,74,130,.55), transparent 65%);
-    animation: drift1 24s ease-in-out infinite alternate;
-  }
-  .g2{
-    width:60vmax; height:60vmax; right:-22vmax; bottom:-28vmax;
-    background: radial-gradient(circle, rgba(150,110,50,.34), transparent 65%);
-    animation: drift2 30s ease-in-out infinite alternate;
-  }
-  .g3{
-    width:45vmax; height:45vmax; left:45%; top:55%;
-    background: radial-gradient(circle, rgba(88,48,110,.28), transparent 65%);
-    animation: drift1 36s ease-in-out infinite alternate-reverse;
-  }
-  @keyframes drift1{ to{ transform: translate3d(6vmax, 4vmax, 0) scale(1.12); } }
-  @keyframes drift2{ to{ transform: translate3d(-5vmax, -6vmax, 0) scale(1.16); } }
-
-  /* 细微颗粒质感 */
-  body::after{
-    content:"";
-    position: fixed; inset: 0;
-    z-index: 1;
-    pointer-events: none;
-    background-image: radial-gradient(rgba(255,255,255,.05) 1px, transparent 1px);
-    background-size: 4px 4px;
-    opacity: .35;
-  }
-
-  /* ---------- 舞台 ---------- */
-  .stage{
-    position: relative;
-    z-index: 2;
+  html, body {
     width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+    /* 全局默认用楷体栈，中文有手写文艺感，英文回落到系统 sans */
+    font-family: 'STKaiti', 'KaiTi', 'Kaiti SC', '楷体',
+                 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    touch-action: manipulation;
+    user-select: none;
+  }
+
+  /* ---------- 游戏主容器 ---------- */
+  #game {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: #0a0a0a;
+  }
+
+  /* ---------- 背景层 ---------- */
+  #bg-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    transition: opacity 0.4s ease;
+    z-index: 0;
+  }
+
+  #bg-layer.fallback {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  }
+
+  /* ---------- 角色立绘层 ---------- */
+  #chara-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 10;
+  }
+
+  .chara-slot {
+    position: absolute;
+    bottom: 0;
+    height: 90%;
     display: flex;
-    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+    will-change: opacity;
+  }
+
+  #chara-left  { left: 0; }
+  #chara-right { right: 0; }
+
+  .chara-slot.visible { opacity: 1; }
+
+  .chara-img {
+    height: 100%;
+    width: auto;
+    display: block;
+    filter: brightness(1) saturate(1);
+    transition: filter 0.4s ease;
+  }
+
+  .chara-slot.dim .chara-img {
+    filter: brightness(0.42) saturate(0.6);
+  }
+
+  /* ---------- 顶部控制栏 ---------- */
+  #top-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 12px 16px;
+    padding-top: calc(12px + env(safe-area-inset-top, 0px));
+    z-index: 30;
+    pointer-events: none;
+  }
+
+  #top-bar > * {
+    pointer-events: auto;
+  }
+
+  .speed-group {
+    display: flex;
+    gap: 8px;
     align-items: center;
   }
 
-  .head{
-    text-align: center;
-    margin-bottom: clamp(30px, 6vh, 56px);
-    padding: 0 20px;
+  .speed-btn {
+    background: rgba(0, 0, 0, 0.55);
+    color: #ccc;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    /* 数字用 Cinzel，更古典；NO 也会走这个字体 */
+    font-family: 'Cinzel', 'STKaiti', 'KaiTi', '楷体', serif;
+    letter-spacing: 0.5px;
   }
 
-  .kicker{
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 10px;
-    letter-spacing: .5em;
-    text-indent: .5em;
-    color: rgba(201,168,106,.55);
-    margin-bottom: 18px;
-    opacity: 0;
-    animation: rise .9s .15s cubic-bezier(.2,.9,.3,1) forwards;
+  .speed-btn.active {
+    background: rgba(255, 200, 50, 0.85);
+    color: #111;
+    border-color: rgba(255, 200, 50, 1);
   }
 
-  h1{
-    font-size: clamp(32px, 8vw, 58px);
-    font-weight: 500;
-    letter-spacing: .3em;
-    text-indent: .3em;
-    color: #f1e9d8;
-    text-shadow:
-      0 0 30px rgba(201,168,106,.35),
-      0 0 70px rgba(201,168,106,.15);
-    opacity: 0;
-    animation: rise .9s .26s cubic-bezier(.2,.9,.3,1) forwards;
+  .speed-btn:active {
+    transform: scale(0.94);
   }
 
-  .rule{
+  #skip-btn {
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    padding: 6px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    transition: all 0.2s ease;
+    font-family: 'STKaiti', 'KaiTi', 'Kaiti SC', '楷体', serif;
+    letter-spacing: 1px;
+  }
+
+  #skip-btn:active {
+    transform: scale(0.94);
+    background: rgba(255, 80, 80, 0.7);
+    border-color: rgba(255, 80, 80, 0.9);
+  }
+
+  /* ---------- 底部对话框 ---------- */
+  #dialogue-box {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    min-height: 160px;
+    max-height: 42vh;
+    background: linear-gradient(180deg, rgba(10, 10, 20, 0.0) 0%, rgba(10, 10, 20, 0.92) 18%, rgba(8, 8, 16, 0.97) 100%);
+    padding: 28px 24px;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
     display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    z-index: 20;
+    cursor: pointer;
+  }
+
+  /* 说话者名字：哥特体优先（英文名会显示为哥特体），中文名回落到楷体 */
+  #speaker-name {
+    font-family: 'MedievalSharp', 'STKaiti', 'KaiTi', 'Kaiti SC', '楷体', serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: #ffd764;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.6), 0 0 12px rgba(255, 215, 100, 0.15);
+    min-height: 22px;
+  }
+
+  /* 对话正文：楷体，有手写文艺感；字号略放大以保可读性 */
+  #dialogue-text {
+    font-family: 'STKaiti', 'KaiTi', 'Kaiti SC', '楷体',
+                 'Noto Serif SC', 'Songti SC', 'SimSun', serif;
+    font-size: 18px;
+    line-height: 1.75;
+    color: #f0f0f0;
+    text-shadow: 0 1px 6px rgba(0,0,0,0.8);
+    word-break: break-word;
+    letter-spacing: 0.4px;
+    min-height: 1.75em;
+  }
+
+  /* 「全剧终」专用样式：行楷 + 金色 + 宽字距，有仪式感 */
+  .ending-text {
+    display: inline-block;
+    font-family: 'STXingkai', 'Xingkai SC', '华文行楷', 'STKaiti', 'KaiTi', '楷体', serif;
+    font-size: 26px;
+    color: #ffd764;
+    letter-spacing: 8px;
+    text-shadow: 0 0 18px rgba(255, 215, 100, 0.45), 0 2px 8px rgba(0, 0, 0, 0.8);
+    padding: 4px 0;
+  }
+
+  /* 打字机光标 */
+  .cursor {
+    display: inline-block;
+    width: 2px;
+    height: 1.1em;
+    background: #ffd764;
+    margin-left: 2px;
+    vertical-align: text-bottom;
+    animation: blink 0.8s step-end infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  /* 点击继续提示 */
+  #continue-hint {
+    position: absolute;
+    bottom: 12px;
+    right: 20px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.55);
+    animation: float 1.6s ease-in-out infinite;
+    display: none;
+    font-family: 'STKaiti', 'KaiTi', '楷体', serif;
+    letter-spacing: 1px;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); opacity: 0.55; }
+    50% { transform: translateY(-4px); opacity: 1; }
+  }
+
+  /* ---------- 跳过弹窗 ---------- */
+  #skip-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.78);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: none;
     align-items: center;
     justify-content: center;
-    gap: 14px;
-    margin-top: 20px;
-    opacity: 0;
-    animation: rise .9s .38s cubic-bezier(.2,.9,.3,1) forwards;
-  }
-  .rule i{
-    display: block;
-    width: min(90px, 18vw);
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(201,168,106,.6), transparent);
-  }
-  .rule span{
-    font-size: 10px;
-    color: rgba(201,168,106,.7);
-  }
-
-  /* ---------- 菜单 ---------- */
-  .menu{
-    display: flex;
-    flex-direction: column;
-    width: min(440px, 84vw);
-    margin: 0 auto;
-  }
-
-  .item{
-    position: relative;
-    isolation: isolate;
-    display: block;
-    width: 100%;
-    padding: 20px 96px 20px 62px;
-    background: none;
-    border: 0;
-    border-top: 1px solid rgba(201,168,106,.16);
-    color: rgba(233,227,213,.72);
-    font-family: inherit;
-    font-size: clamp(17px, 4.4vw, 22px);
-    letter-spacing: .34em;
-    text-align: left;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-    transition: color .35s ease, padding-left .35s ease, background-image .35s ease, text-shadow .35s ease;
-    opacity: 0;
-    transform: translateY(16px);
-    animation: rise .8s cubic-bezier(.2,.9,.3,1) forwards;
-  }
-  .item:last-child{ border-bottom: 1px solid rgba(201,168,106,.16); }
-
-  .item:nth-child(1){ animation-delay: .55s; }
-  .item:nth-child(2){ animation-delay: .68s; }
-  .item:nth-child(3){ animation-delay: .81s; }
-
-  /* 左侧高亮光条 */
-  .item::before{
-    content:"";
-    position: absolute;
-    left: 0; top: 50%;
-    width: 2px; height: 0;
-    transform: translateY(-50%);
-    background: linear-gradient(180deg, transparent, var(--gold-lit), transparent);
-    box-shadow: 0 0 10px rgba(217,187,125,.8);
-    transition: height .4s cubic-bezier(.2,.9,.3,1);
-  }
-
-  .item:hover,
-  .item.active{
-    color: #f5eedd;
-    padding-left: 74px;
-    background-image: linear-gradient(90deg, rgba(201,168,106,.14), rgba(201,168,106,.03) 60%, transparent);
-    text-shadow: 0 0 18px rgba(233,211,160,.5);
-  }
-  .item:hover::before,
-  .item.active::before{ height: 76%; }
-
-  .item:focus-visible{
-    outline: 1px dashed rgba(201,168,106,.6);
-    outline-offset: -6px;
-  }
-
-  .idx{
-    position: absolute;
-    left: 24px; top: 50%;
-    transform: translateY(-50%);
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 11px;
-    letter-spacing: .08em;
-    color: rgba(201,168,106,.42);
-    transition: color .35s ease;
-  }
-  .item:hover .idx,
-  .item.active .idx{ color: var(--gold-lit); }
-
-  .en{
-    position: absolute;
-    right: 22px; top: 50%;
-    transform: translateY(-50%);
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 9.5px;
-    letter-spacing: .24em;
-    color: rgba(233,227,213,.18);
-    transition: color .35s ease;
-  }
-  .item:hover .en,
-  .item.active .en{ color: rgba(224,198,143,.78); }
-
-  /* ---------- 底部提示 ---------- */
-  .hint{
-    margin-top: clamp(28px, 5vh, 48px);
-    text-align: center;
-    font-size: 11px;
-    letter-spacing: .2em;
-    color: rgba(233,227,213,.3);
-    opacity: 0;
-    animation: rise 1s .95s cubic-bezier(.2,.9,.3,1) forwards;
-  }
-  kbd{
-    display: inline-block;
-    padding: 2px 6px;
-    margin: 0 2px;
-    border: 1px solid rgba(201,168,106,.28);
-    border-radius: 3px;
-    font-family: inherit;
-    font-size: 10px;
-    color: rgba(201,168,106,.62);
-  }
-
-  /* ---------- 弹层 ---------- */
-  .overlay{
-    position: fixed;
-    inset: 0;
-    z-index: 30;
-    display: grid;
-    place-items: center;
+    z-index: 100;
     padding: 24px;
-    background: rgba(4,4,8,.78);
-    -webkit-backdrop-filter: blur(6px);
-    backdrop-filter: blur(6px);
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity .35s ease, visibility .35s ease;
-  }
-  .overlay.show{ opacity: 1; visibility: visible; }
-
-  .panel{
-    position: relative;
-    width: min(520px, 100%);
-    padding: 38px 34px 30px;
-    border: 1px solid rgba(201,168,106,.35);
-    background: linear-gradient(160deg, rgba(26,23,32,.96), rgba(11,10,15,.97));
-    box-shadow: 0 24px 80px rgba(0,0,0,.7), inset 0 0 60px rgba(201,168,106,.05);
-    transform: translateY(16px) scale(.97);
-    transition: transform .45s cubic-bezier(.2,.9,.3,1.2);
-  }
-  .overlay.show .panel{ transform: none; }
-
-  .panel::before,
-  .panel::after{
-    content:"";
-    position: absolute;
-    width: 14px; height: 14px;
-    border: 1px solid var(--gold);
-  }
-  .panel::before{ top:-1px; left:-1px; border-right:0; border-bottom:0; }
-  .panel::after{ bottom:-1px; right:-1px; border-left:0; border-top:0; }
-
-  .panel h2{
-    font-size: 21px;
-    font-weight: 500;
-    letter-spacing: .3em;
-    color: #f1e9d8;
-    margin-bottom: 18px;
-  }
-  .panel h2::after{
-    content:"";
-    display: block;
-    width: 42px; height: 1px;
-    margin-top: 14px;
-    background: linear-gradient(90deg, var(--gold), transparent);
   }
 
-  .panel p{
-    font-size: 14.5px;
-    line-height: 2.1;
-    letter-spacing: .06em;
-    color: rgba(233,227,213,.72);
-  }
-
-  .panel-foot{
-    margin-top: 30px;
+  #skip-modal-overlay.show {
     display: flex;
-    justify-content: flex-end;
   }
 
-  #panelClose{
-    padding: 10px 30px;
-    background: transparent;
-    border: 1px solid rgba(201,168,106,.45);
-    color: var(--gold-lit);
-    font-family: inherit;
-    font-size: 13px;
-    letter-spacing: .3em;
-    text-indent: .3em;
+  #skip-modal {
+    background: linear-gradient(160deg, #1e1e2e 0%, #14141f 100%);
+    border: 1px solid rgba(255, 215, 100, 0.25);
+    border-radius: 16px;
+    padding: 28px 24px;
+    max-width: 520px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+    animation: modalIn 0.28s ease-out;
     cursor: pointer;
-    transition: background-color .3s ease, color .3s ease, box-shadow .3s ease;
-  }
-  #panelClose:hover,
-  #panelClose:focus-visible{
-    background: rgba(201,168,106,.14);
-    color: #fff6e2;
-    box-shadow: 0 0 22px rgba(201,168,106,.3);
-    outline: none;
   }
 
-  @keyframes rise{
-    to{ opacity: 1; transform: none; }
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.92) translateY(12px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
   }
 
-  @media (prefers-reduced-motion: reduce){
-    *{
-      animation-duration: .01ms !important;
-      animation-delay: 0ms !important;
-      transition-duration: .01ms !important;
+  /* 弹窗标题：楷体加粗，金色，字距拉开 */
+  #skip-modal h3 {
+    font-family: 'STKaiti', 'KaiTi', 'Kaiti SC', '楷体', serif;
+    font-size: 18px;
+    color: #ffd764;
+    margin-bottom: 14px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-align: center;
+  }
+
+  /* 弹窗正文：楷体，行距放宽 */
+  #skip-modal p {
+    font-family: 'STKaiti', 'KaiTi', 'Kaiti SC', '楷体', serif;
+    font-size: 16px;
+    line-height: 1.85;
+    color: #d0d0d8;
+    margin-bottom: 18px;
+    letter-spacing: 0.3px;
+  }
+
+  #skip-modal .modal-hint {
+    font-family: 'STKaiti', 'KaiTi', '楷体', serif;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.4);
+    text-align: center;
+    margin-bottom: 0;
+    letter-spacing: 1px;
+    animation: float 1.6s ease-in-out infinite;
+  }
+
+  /* ---------- 竖屏提示覆盖层 ---------- */
+  #rotate-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #0a0a12;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    color: #fff;
+    text-align: center;
+    padding: 24px;
+  }
+
+  #rotate-overlay .rotate-icon {
+    font-size: 56px;
+    margin-bottom: 20px;
+    animation: rotateHint 2s ease-in-out infinite;
+  }
+
+  @keyframes rotateHint {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(90deg); }
+  }
+
+  #rotate-overlay p {
+    font-family: 'STKaiti', 'KaiTi', '楷体', serif;
+    font-size: 16px;
+    color: #aaa;
+    line-height: 1.6;
+    letter-spacing: 1px;
+  }
+
+  @media (orientation: portrait) {
+    #rotate-overlay {
+      display: flex;
     }
-    .item, .kicker, h1, .rule, .hint{ opacity: 1; transform: none; }
+    #game {
+      visibility: hidden;
+    }
   }
 </style>
 </head>
 <body>
 
-<canvas id="dust" aria-hidden="true"></canvas>
-<div class="glow g1" aria-hidden="true"></div>
-<div class="glow g2" aria-hidden="true"></div>
-<div class="glow g3" aria-hidden="true"></div>
+<!-- 竖屏提示 -->
+<div id="rotate-overlay">
+  <div class="rotate-icon">📱</div>
+  <p>请将手机横屏使用<br>以获得最佳游戏体验</p>
+</div>
 
-<main class="stage">
-  <header class="head">
-    <p class="kicker">THE THEATRE OF ILLUSION</p>
-    <h1>Golden Theatre</h1>
-    <div class="rule" aria-hidden="true"><i></i><span>❖</span><i></i></div>
-  </header>
+<!-- 游戏主容器 -->
+<div id="game">
+  <div id="bg-layer"></div>
 
-  <nav class="menu" aria-label="Main Menu">
-    <button class="item" type="button"
-      data-url="https://example.com/performance"
-      data-title="For EVERY perfect performance"
-      data-text="The curtain is about to rise. Choose your role, and confirm the script and the scene. Every choice you make will rewrite the story—and remember, in the world of theater, there are no coincidences.">
-      <span class="idx">01</span>
-      <span class="label">Performance</span>
-      <span class="en">A</span>
-    </button>
+  <!-- 角色立绘层 -->
+  <div id="chara-layer">
+    <div class="chara-slot" id="chara-left">
+      <img class="chara-img" alt="chrt01">
+    </div>
+    <div class="chara-slot" id="chara-right">
+      <img class="chara-img" alt="chrt02">
+    </div>
+  </div>
 
-    <button class="item" type="button"
-      data-url="https://example.com/actors"
-      data-title="The Golden Spine"
-      data-text="All theater actors possess extraordinary qualities; they forge their lives into artistic archetypes, playing the harp of the Muse with their very souls.">
-      <span class="idx">02</span>
-      <span class="label">Actor List</span>
-      <span class="en">B</span>
-    </button>
+  <!-- 顶部控制栏 -->
+  <div id="top-bar">
+    <div class="speed-group">
+      <button class="speed-btn active" data-speed="1">NO</button>
+      <button class="speed-btn" data-speed="2">x2</button>
+      <button class="speed-btn" data-speed="3">x3</button>
+      <button class="speed-btn" data-speed="4">x4</button>
+    </div>
+    <button id="skip-btn">跳过 ▶▶</button>
+  </div>
 
-    <button class="item" type="button"
-      data-url="https://example.com/archive"
-      data-title="Cassettes of the Past"
-      data-text="Plays that have already concluded are archived here. You can revisit past scenes, explore locked ending branches, or choose to &quot;re-enact&quot;—rewriting that ending once more.">
-      <span class="idx">03</span>
-      <span class="label">Opera Archive</span>
-      <span class="en">C</span>
-    </button>
-  </nav>
+  <!-- 底部对话框 -->
+  <div id="dialogue-box">
+    <div id="speaker-name"></div>
+    <div id="dialogue-text"></div>
+    <div id="continue-hint">点击继续 ▼</div>
+  </div>
 
-  <footer class="hint">
-    <kbd>↑</kbd><kbd>↓</kbd> 选择　<kbd>Enter</kbd> 确认
-  </footer>
-</main>
-
-<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="panelTitle">
-  <div class="panel">
-    <h2 id="panelTitle"></h2>
-    <p id="panelText"></p>
-    <div class="panel-foot">
-      <button id="panelClose" type="button">返 回</button>
+  <!-- 跳过弹窗 -->
+  <div id="skip-modal-overlay">
+    <div id="skip-modal">
+      <h3>📖 剧情简略</h3>
+      <p id="skip-summary"></p>
+      <p class="modal-hint">点击任意位置继续下一幕</p>
     </div>
   </div>
 </div>
 
 <script>
-(function () {
+(function() {
   'use strict';
 
-  /* ============ 背景浮尘粒子 ============ */
-  (function dust() {
-    const canvas = document.getElementById('dust');
-    const ctx = canvas.getContext('2d');
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    let w = 0, h = 0, particles = [];
+  const CONFIG = {
+    imageBase: 'https://cdn.jsdelivr.net/gh/FanyDay102/originccharacter001@main',
+    audioBase: 'https://cdn.jsdelivr.net/gh/FanyDay102/originccharacter001@main',
+    baseTypeSpeed: 45,
+    baseAutoDelay: 4400,
+    fadeDuration: 400,
+    bgmVolume: 0.4,
+    bgmFadeDuration: 800,
+  };
 
-    function seed() {
-      const count = Math.min(90, Math.round((w * h) / 16000));
-      particles = Array.from({ length: count }, function () {
-        return {
-          x: Math.random() * w,
-          y: Math.random() * h,
-          r: Math.random() * 1.5 + 0.4,
-          vx: (Math.random() - 0.5) * 0.12,
-          vy: -(Math.random() * 0.22 + 0.04),
-          a: Math.random() * 0.45 + 0.12,
-          ph: Math.random() * Math.PI * 2,
-          sp: Math.random() * 0.02 + 0.008
-        };
+  const story = [
+    {
+      bg: 'bg001room.png',
+      bgm: 'bgm001.mp3',
+      summary: '你在一个陌生的房间醒来，空气中弥漫着消毒水的气味。你失去所有记忆，仅仅记得自己的名字。一位自称为你养子的少女协同3位伙伴将你从[塔]的大楼中救出，并一路逃往Ontario。',
+      dialogues: [
+        { speaker: '旁白', text: '你缓缓睁开眼睛，视线逐渐聚焦。', chara: null },
+        { speaker: '旁白', text: '最先映入眼帘的是晃眼的白色天花板，以及置于顶端的LED白灯管。耳边是[滴滴答]作响的仪器，喉管被异物入侵的不适感随之而来。你确信你不是自主呼吸，那些冰冷的空气充满化学工业的气息。', chara: null },
+        { speaker: '旁白', text: '可无论如何，你什么都做不了，哪怕只是晃动眼球都撕扯地眼部剧痛......', chara: 'chrt01' },
+        { speaker: '你', text: '（......这是哪里？）', chara: 'chrt01' },
+        { speaker: '你', text: '（我记得我明明在家里……怎么会到这里？）', chara: 'chrt01' },
+        { speaker: '旁白', text: '你试图回忆，但脑海中只有一片模糊的碎片。', chara: null },
+        { speaker: '旁白', text: '桌上放着一张泛黄的纸条，上面用红笔写着一行字。', chara: null },
+        { speaker: '你', text: '"牺牲一个人，可以拯救许多人。你，会怎么选？"', chara: 'chrt01' },
+        { speaker: '旁白', text: '你握紧了纸条，心跳开始加速。', chara: null },
+      ]
+    },
+    {
+      bg: 'bg001room.png',
+      bgm: 'bgm002.mp3',
+      summary: '门突然打开，一个陌生人出现在门口。他告诉你，外面爆发了灾难，而你手中握有唯一的解药配方。你必须决定是否交出配方。',
+      dialogues: [
+        { speaker: '旁白', text: '就在你沉思之际，门锁发出了"咔哒"一声。', chara: null },
+        { speaker: '陌生人', text: '你醒了。', chara: 'chrt02', bgm: 'bgm003.mp3' },
+        { speaker: '陌生人', text: '听着，我没时间解释太多。外面的世界已经乱了，病毒在蔓延。', chara: 'chrt02' },
+        { speaker: '陌生人', text: '而你——你的血液里，有唯一的抗体。', chara: 'chrt02' },
+        { speaker: '你', text: '……你在说什么？', chara: 'chrt01' },
+        { speaker: '陌生人', text: '我需要你的配合。跟我走，或者留在这里等死。', chara: 'chrt02' },
+        { speaker: '旁白', text: '他伸出了手，眼神里既有焦急，也有一丝你看不透的东西。', chara: null, bgm: null },
+      ]
+    },
+  ];
+
+  let sceneIndex = 0;
+  let dialogueIndex = 0;
+  let speed = 1;
+  let isTyping = false;
+  let typeTimer = null;
+  let autoTimer = null;
+  let fullText = '';
+  let displayedText = '';
+  let charIndex = 0;
+  let isTransitioning = false;
+  let skipModalVisible = false;
+  let hasStarted = false;
+
+  const $game = document.getElementById('game');
+  const $bgLayer = document.getElementById('bg-layer');
+  const $speakerName = document.getElementById('speaker-name');
+  const $dialogueText = document.getElementById('dialogue-text');
+  const $dialogueBox = document.getElementById('dialogue-box');
+  const $continueHint = document.getElementById('continue-hint');
+  const $skipBtn = document.getElementById('skip-btn');
+  const $skipModalOverlay = document.getElementById('skip-modal-overlay');
+  const $skipSummary = document.getElementById('skip-summary');
+  const $speedBtns = document.querySelectorAll('.speed-btn');
+  const $charaLeft = document.getElementById('chara-left');
+  const $charaRight = document.getElementById('chara-right');
+
+  function getBgUrl(filename) { return CONFIG.imageBase + '/' + filename; }
+  function getCharaUrl(name) { return CONFIG.imageBase + '/' + name + '.png'; }
+  function getAudioUrl(filename) { return CONFIG.audioBase + '/' + filename; }
+
+  function setBackground(filename) {
+    const url = getBgUrl(filename);
+    const img = new Image();
+    img.onload = function() {
+      $bgLayer.style.backgroundImage = 'url("' + url + '")';
+      $bgLayer.classList.remove('fallback');
+    };
+    img.onerror = function() {
+      console.warn('背景图片加载失败:', url);
+      $bgLayer.classList.add('fallback');
+      $bgLayer.style.backgroundImage = 'none';
+    };
+    img.src = url;
+  }
+
+  function clearTypingTimer() {
+    if (typeTimer) { clearInterval(typeTimer); typeTimer = null; }
+    isTyping = false;
+  }
+
+  function clearAutoTimer() {
+    if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
+  }
+
+  function getTypeSpeed() { return CONFIG.baseTypeSpeed / speed; }
+  function getAutoDelay() { return CONFIG.baseAutoDelay / speed; }
+
+  // ---------- BGM ----------
+  let currentBgm = null;
+  let pendingBgmName = '';
+  let bgmUnlocked = false;
+
+  function fadeAudio(audio, fromVol, toVol, duration, onDone) {
+    if (!audio) { if (onDone) onDone(); return; }
+    const steps = Math.max(1, Math.round(duration / 50));
+    const stepTime = duration / steps;
+    const delta = (toVol - fromVol) / steps;
+    let step = 0;
+    audio.volume = fromVol;
+    const timer = setInterval(function() {
+      step++;
+      let v = fromVol + delta * step;
+      if (v < 0) v = 0;
+      if (v > 1) v = 1;
+      audio.volume = v;
+      if (step >= steps) {
+        clearInterval(timer);
+        audio.volume = toVol;
+        if (onDone) onDone();
+      }
+    }, stepTime);
+  }
+
+  function switchBgm(filename, fadeDuration) {
+    const fade = (typeof fadeDuration === 'number') ? fadeDuration : CONFIG.bgmFadeDuration;
+    const target = filename || '';
+    if (!bgmUnlocked) { pendingBgmName = target; return; }
+    if (currentBgm && currentBgm.name === target) return;
+    if (!currentBgm && !target) return;
+
+    if (currentBgm) {
+      const oldAudio = currentBgm.audio;
+      currentBgm = null;
+      fadeAudio(oldAudio, oldAudio.volume, 0, fade, function() {
+        try { oldAudio.pause(); oldAudio.src = ''; } catch (e) {}
       });
     }
 
-    function resize() {
-      w = window.innerWidth;
-      h = window.innerHeight;
-      canvas.width = Math.floor(w * dpr);
-      canvas.height = Math.floor(h * dpr);
-      canvas.style.width = w + 'px';
-      canvas.style.height = h + 'px';
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      seed();
+    if (!target) return;
+
+    const audio = new Audio();
+    audio.loop = true;
+    audio.preload = 'auto';
+    audio.src = getAudioUrl(target);
+    audio.volume = 0;
+    currentBgm = { audio: audio, name: target };
+
+    const playPromise = audio.play();
+    if (playPromise && typeof playPromise.then === 'function') {
+      playPromise.then(function() {
+        fadeAudio(audio, 0, CONFIG.bgmVolume, fade);
+      }).catch(function(err) {
+        console.warn('BGM 播放失败（可能被浏览器拦截）:', err);
+      });
+    } else {
+      fadeAudio(audio, 0, CONFIG.bgmVolume, fade);
+    }
+  }
+
+  function unlockBgm() {
+    if (bgmUnlocked) return;
+    bgmUnlocked = true;
+    const name = pendingBgmName;
+    pendingBgmName = '';
+    if (name) switchBgm(name);
+  }
+
+  // ---------- 角色立绘 ----------
+  function applyChara(charaName) {
+    const leftLit  = charaName === 'chrt01';
+    const rightLit = charaName === 'chrt02';
+
+    if (leftLit) {
+      ensureCharaShown($charaLeft, 'chrt01');
+      $charaLeft.classList.remove('dim');
+    } else if ($charaLeft.classList.contains('visible')) {
+      $charaLeft.classList.add('dim');
     }
 
-    function frame() {
-      ctx.clearRect(0, 0, w, h);
-      for (let i = 0; i < particles.length; i++) {
-        const p = particles[i];
-        p.x += p.vx;
-        p.y += p.vy;
-        p.ph += p.sp;
-
-        if (p.y < -12) { p.y = h + 12; p.x = Math.random() * w; }
-        if (p.x < -12) p.x = w + 12;
-        if (p.x > w + 12) p.x = -12;
-
-        const alpha = p.a * (0.55 + 0.45 * Math.sin(p.ph));
-        ctx.beginPath();
-        ctx.fillStyle = 'rgba(233,211,160,' + alpha.toFixed(3) + ')';
-        ctx.shadowColor = 'rgba(233,211,160,.7)';
-        ctx.shadowBlur = 7;
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      requestAnimationFrame(frame);
+    if (rightLit) {
+      ensureCharaShown($charaRight, 'chrt02');
+      $charaRight.classList.remove('dim');
+    } else if ($charaRight.classList.contains('visible')) {
+      $charaRight.classList.add('dim');
     }
+  }
 
-    resize();
-    window.addEventListener('resize', resize);
-    requestAnimationFrame(frame);
-  })();
+  function ensureCharaShown(slot, name) {
+    const img = slot.querySelector('.chara-img');
+    if (img.getAttribute('data-chara') !== name) {
+      img.src = getCharaUrl(name);
+      img.setAttribute('data-chara', name);
+    }
+    slot.classList.add('visible');
+  }
 
-  /* ============ 菜单交互 ============ */
-  const items = Array.prototype.slice.call(document.querySelectorAll('.item'));
-  const overlay = document.getElementById('overlay');
-  const panelTitle = document.getElementById('panelTitle');
-  const panelText = document.getElementById('panelText');
-  const closeBtn = document.getElementById('panelClose');
-  let current = 0;
-  let navigating = false;   // 防止跳转期间重复触发
-
-  function setActive(i) {
-    current = (i + items.length) % items.length;
-    items.forEach(function (el, n) {
-      el.classList.toggle('active', n === current);
+  function resetCharacters() {
+    [$charaLeft, $charaRight].forEach(function(slot) {
+      slot.classList.remove('visible', 'dim');
+      const img = slot.querySelector('.chara-img');
+      img.removeAttribute('src');
+      img.removeAttribute('data-chara');
     });
   }
 
-  function openPanel(title, text) {
-    panelTitle.textContent = title;
-    panelText.textContent = text;
-    overlay.classList.add('show');
-    closeBtn.focus();
+  function preloadCharas() {
+    ['chrt01', 'chrt02'].forEach(function(name) {
+      const img = new Image();
+      img.src = getCharaUrl(name);
+    });
   }
 
-  function closePanel() {
-    overlay.classList.remove('show');
-    items[current].focus();
+  // ---------- 打字机 ----------
+  function startDialogue() {
+    clearTypingTimer();
+    clearAutoTimer();
+
+    const scene = story[sceneIndex];
+    if (!scene) return;
+
+    const dialogue = scene.dialogues[dialogueIndex];
+    if (!dialogue) { nextScene(); return; }
+
+    if (Object.prototype.hasOwnProperty.call(dialogue, 'bgm')) {
+      switchBgm(dialogue.bgm);
+    }
+
+    $speakerName.textContent = dialogue.speaker || '';
+    applyChara(dialogue.chara || null);
+
+    fullText = dialogue.text || '……';
+    displayedText = '';
+    charIndex = 0;
+    $dialogueText.innerHTML = '';
+    $continueHint.style.display = 'none';
+
+    isTyping = true;
+    const speedMs = getTypeSpeed();
+    typeTimer = setInterval(function() {
+      if (charIndex < fullText.length) {
+        displayedText += fullText.charAt(charIndex);
+        charIndex++;
+        $dialogueText.textContent = displayedText;
+      } else {
+        clearTypingTimer();
+        isTyping = false;
+        $dialogueText.innerHTML = displayedText + '<span class="cursor"></span>';
+        $continueHint.style.display = 'block';
+        scheduleAutoAdvance();
+      }
+    }, Math.max(speedMs, 8));
   }
 
-  /* 跳转：先做淡出，再跳转 */
-  function goTo(url, newTab) {
-    if (navigating) return;
-    navigating = true;
+  function completeTyping() {
+    if (!isTyping) return;
+    clearTypingTimer();
+    displayedText = fullText;
+    charIndex = fullText.length;
+    $dialogueText.innerHTML = displayedText + '<span class="cursor"></span>';
+    isTyping = false;
+    $continueHint.style.display = 'block';
+    scheduleAutoAdvance();
+  }
 
-    if (newTab) {
-      window.open(url, '_blank', 'noopener');
-      navigating = false;
+  function scheduleAutoAdvance() {
+    clearAutoTimer();
+    if (speed < 2) return;
+    if (skipModalVisible) return;
+    if (isTransitioning) return;
+    autoTimer = setTimeout(function() {
+      autoTimer = null;
+      handleDialogueClick();
+    }, getAutoDelay());
+  }
+
+  function restartTyping() {
+    clearTypingTimer();
+    const remainingText = fullText.substring(charIndex);
+    let remainingIndex = 0;
+    isTyping = true;
+    const speedMs = getTypeSpeed();
+    typeTimer = setInterval(function() {
+      if (remainingIndex < remainingText.length) {
+        displayedText += remainingText.charAt(remainingIndex);
+        remainingIndex++;
+        charIndex++;
+        $dialogueText.textContent = displayedText;
+      } else {
+        clearTypingTimer();
+        isTyping = false;
+        $dialogueText.innerHTML = displayedText + '<span class="cursor"></span>';
+        $continueHint.style.display = 'block';
+        scheduleAutoAdvance();
+      }
+    }, Math.max(speedMs, 8));
+  }
+
+  // ---------- 推进 ----------
+  function handleDialogueClick() {
+    if (skipModalVisible) return;
+    if (isTransitioning) return;
+    clearAutoTimer();
+
+    if (!hasStarted) {
+      hasStarted = true;
+      tryLockLandscape();
+    }
+
+    if (isTyping) { completeTyping(); return; }
+
+    const scene = story[sceneIndex];
+    if (!scene) return;
+
+    if (dialogueIndex < scene.dialogues.length - 1) {
+      dialogueIndex++;
+      startDialogue();
+    } else {
+      nextScene();
+    }
+  }
+
+  // ---------- 场景切换 ----------
+  function nextScene() {
+    if (isTransitioning) return;
+    clearAutoTimer();
+    clearTypingTimer();
+    sceneIndex++;
+
+    if (sceneIndex >= story.length) {
+      $speakerName.textContent = '';
+      // 给「全剧终」套一个可独立样式的 span
+      $dialogueText.innerHTML = '<span class="ending-text">— 全 剧 终 —</span>';
+      $continueHint.style.display = 'none';
+      $skipBtn.disabled = true;
+      $skipBtn.style.opacity = '0.4';
+      switchBgm('');
       return;
     }
 
-    document.body.style.transition = 'opacity .35s ease';
-    document.body.style.opacity = '0';
+    isTransitioning = true;
+    $bgLayer.style.opacity = '0';
 
-    window.setTimeout(function () {
-      window.location.href = url;
-    }, 350);
+    setTimeout(function() {
+      const newScene = story[sceneIndex];
+      setBackground(newScene.bg);
+      resetCharacters();
+      dialogueIndex = 0;
+      switchBgm(newScene.bgm || '');
+      $speakerName.textContent = '';
+      $dialogueText.innerHTML = '';
+      $continueHint.style.display = 'none';
+      $bgLayer.style.opacity = '1';
+      setTimeout(function() {
+        isTransitioning = false;
+        startDialogue();
+      }, CONFIG.fadeDuration);
+    }, CONFIG.fadeDuration);
   }
 
-  items.forEach(function (el, i) {
-    el.addEventListener('mouseenter', function () { setActive(i); });
-    el.addEventListener('focus', function () { setActive(i); });
-    el.addEventListener('click', function () {
-      const url = el.dataset.url;
-      if (url) {
-        // 想在新标签页打开就改成 goTo(url, true)
-        goTo(url, false);
-        return;
-      }
-      // 没有配置 url 时，保留原来的弹层行为
-      openPanel(el.dataset.title, el.dataset.text);
+  // ---------- 跳过 ----------
+  function showSkipModal() {
+    if (isTransitioning) return;
+    if (skipModalVisible) return;
+    const scene = story[sceneIndex];
+    if (!scene) return;
+    $skipSummary.textContent = scene.summary || '（暂无简略剧情）';
+    $skipModalOverlay.classList.add('show');
+    skipModalVisible = true;
+    clearTypingTimer();
+    clearAutoTimer();
+  }
+
+  function hideSkipModalAndAdvance() {
+    if (!skipModalVisible) return;
+    $skipModalOverlay.classList.remove('show');
+    skipModalVisible = false;
+    nextScene();
+  }
+
+  // ---------- 倍速 ----------
+  function setSpeed(newSpeed) {
+    speed = newSpeed;
+    $speedBtns.forEach(function(btn) {
+      const s = parseInt(btn.dataset.speed, 10);
+      btn.classList.toggle('active', s === newSpeed);
+    });
+    if (isTyping) { restartTyping(); return; }
+    if (speed < 2) {
+      clearAutoTimer();
+    } else {
+      if ($continueHint.style.display === 'block') scheduleAutoAdvance();
+    }
+  }
+
+  // ---------- 屏幕方向 ----------
+  function tryLockLandscape() {
+    if (screen.orientation && screen.orientation.lock) {
+      screen.orientation.lock('landscape').catch(function(err) {
+        console.log('屏幕方向锁定失败（可忽略）:', err.message);
+      });
+    }
+  }
+
+  // ---------- 初始化 ----------
+  function init() {
+    preloadCharas();
+    if (story.length > 0) {
+      setBackground(story[0].bg);
+      switchBgm(story[0].bgm || '');
+    }
+    setSpeed(1);
+    dialogueIndex = 0;
+    startDialogue();
+  }
+
+  // ---------- 事件 ----------
+  $game.addEventListener('click', function(e) {
+    if (e.target.closest('#top-bar')) return;
+    if (e.target.closest('#skip-modal-overlay')) return;
+    handleDialogueClick();
+  });
+
+  $skipBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    showSkipModal();
+  });
+
+  $skipModalOverlay.addEventListener('click', function(e) {
+    e.stopPropagation();
+    hideSkipModalAndAdvance();
+  });
+
+  $speedBtns.forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const s = parseInt(btn.dataset.speed, 10);
+      setSpeed(s);
     });
   });
 
-  closeBtn.addEventListener('click', closePanel);
-  overlay.addEventListener('click', function (e) {
-    if (e.target === overlay) closePanel();
-  });
-
-  document.addEventListener('keydown', function (e) {
-    if (overlay.classList.contains('show')) {
-      if (e.key === 'Escape') { e.preventDefault(); closePanel(); }
-      return;
-    }
-
-    // 焦点已在按钮上时，交给浏览器原生行为，避免重复触发
-    const onButton = document.activeElement && document.activeElement.classList.contains('item');
-
-    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
-      e.preventDefault(); setActive(current + 1);
-    } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
-      e.preventDefault(); setActive(current - 1);
-    } else if (e.key === 'Enter' || e.key === ' ') {
-      if (onButton) return;
+  document.addEventListener('keydown', function(e) {
+    if (e.key === ' ' || e.key === 'Enter') {
       e.preventDefault();
-      items[current].click();
+      handleDialogueClick();
     }
   });
 
-  setActive(0);
+  document.addEventListener('touchmove', function(e) {
+    e.preventDefault();
+  }, { passive: false });
+
+  document.addEventListener('pointerdown', unlockBgm, { once: true, passive: true });
+  document.addEventListener('keydown', unlockBgm, { once: true });
+
+  init();
 })();
 </script>
 </body>
